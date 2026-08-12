@@ -233,11 +233,11 @@ font:
 
 # 指定自定义 .js 文件路径，支持列表；路径是相对 source 目录，如 /js/custom.js 对应存放目录 source/js/custom.js
 # Specify the path of your custom js file, support list. The path is relative to the source directory, such as `/js/custom.js` corresponding to the directory `source/js/custom.js`
-custom_js:
+custom_js: /js/ascii-bg.js
 
 # 指定自定义 .css 文件路径，用法和 custom_js 相同
 # The usage is the same as custom_js
-custom_css:
+custom_css: /css/board-glass.css
 
 # 网页访问统计
 # Analysis of website visitors
@@ -482,7 +482,7 @@ footer:
 index:
   # 首页 Banner 头图，可以是相对路径或绝对路径，以下相同
   # Path of Banner image, can be a relative path or an absolute path, the same on other pages
-  banner_img: /img/OmagariHare.jpg
+  banner_img:
 
   # 头图高度，屏幕百分比
   # Height ratio of banner image
@@ -554,7 +554,7 @@ index:
 # Post Page
 #---------------------------
 post:
-  banner_img: /img/purple.jpg
+  banner_img:
   banner_img_height: 70
   banner_mask_alpha: 0.3
 
@@ -918,7 +918,7 @@ discuss:
 # Archive Page
 #---------------------------
 archive:
-  banner_img: /img/DarkRoom.jpg
+  banner_img:
   banner_img_height: 60
   banner_mask_alpha: 0.3
 
@@ -929,7 +929,7 @@ archive:
 #---------------------------
 category:
   enable: true
-  banner_img: /img/DarkRoom.jpg
+  banner_img:
   banner_img_height: 60
   banner_mask_alpha: 0.3
 
@@ -958,7 +958,7 @@ category:
 #---------------------------
 tag:
   enable: true
-  banner_img: /img/DarkRoom.jpg
+  banner_img:
   banner_img_height: 80
   banner_mask_alpha: 0.3
   tagcloud:
@@ -975,7 +975,7 @@ tag:
 #---------------------------
 about:
   enable: true
-  banner_img: /img/DarkRoom.jpg
+  banner_img:
   banner_img_height: 60
   banner_mask_alpha: 0.3
   avatar: /img/avatar.png
