@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Studying Hexo</title>
+    <link href="/2025/03/18/Studying-Hexo/"/>
+    <url>/2025/03/18/Studying-Hexo/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>Hexo官方文档：</p><p>​<a href="https://hexo.io/zh-cn/docs/">https://hexo.io/zh-cn/docs/</a></p><p>Fluid主题官方文档：</p><p>​<a href="https://hexo.fluid-dev.com/docs">https://hexo.fluid-dev.com/docs</a></p></blockquote><p>安装hexo：</p><p>​<a href="https://blog.csdn.net/weixin_45019350/article/details/121901433">https://blog.csdn.net/weixin_45019350/article/details/121901433</a></p><p>多机hexo：</p><p>​<a href="https://blog.csdn.net/weixin_45019350/article/details/121901433">https://blog.csdn.net/weixin_45019350/article/details/121901433</a></p><p>自定义fluid主题：（我是npm安装的，应该需要源码安装才行，放到theme文件夹）</p><p>​:star:<a href="https://hexo.fluid-dev.com/">https://hexo.fluid-dev.com/</a></p><p>​<a href="https://blog.kevinchu.top/2023/07/17/hexo-theme-fluid-modify/">https://blog.kevinchu.top/2023/07/17/hexo-theme-fluid-modify/</a></p><p>hexo如何插入图片：</p><p>​<a href="https://zhuanlan.zhihu.com/p/265077468">https://zhuanlan.zhihu.com/p/265077468</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>前端</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>hexo</tag>
+      
+      <tag>web</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>[UNIX_PROGRAMMING] fork &amp; vfork</title>
+    <link href="/2025/03/18/UNIX-PROGRAMMING-fork-vfork/"/>
+    <url>/2025/03/18/UNIX-PROGRAMMING-fork-vfork/</url>
+    
+    <content type="html"><![CDATA[]]></content>
+    
+    
+    <categories>
+      
+      <category>课程</category>
+      
+      <category>系统编程</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>UNIX</tag>
+      
+      <tag>fork</tag>
+      
+      <tag>thread</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
