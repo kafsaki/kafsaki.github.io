@@ -60,13 +60,26 @@
       '[data-user-color-scheme="dark"] .top-nav-collapse { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; }',
       '[data-user-color-scheme="dark"] .dropdown-collapse { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; }',
       '[data-user-color-scheme="dark"] .navbar-col-show { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; }',
+      // Navbar — 系统夜间模式
+      '@media (prefers-color-scheme: dark) { ' +
+        ':root:not([data-user-color-scheme]) .top-nav-collapse { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; } ' +
+        ':root:not([data-user-color-scheme]) .dropdown-collapse { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; } ' +
+        ':root:not([data-user-color-scheme]) .navbar-col-show { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; } ' +
+      '}',
       // Board — 日间
       '#board { background-color: rgba(255, 255, 255, ' + boardAlpha + ') !important; }',
       // Board — 手动夜间模式
       '[data-user-color-scheme="dark"] #board { background-color: rgba(37, 45, 56, ' + boardAlpha + ') !important; }',
+      // Board — 系统夜间模式
+      '@media (prefers-color-scheme: dark) { ' +
+        ':root:not([data-user-color-scheme]) #board { background-color: rgba(37, 45, 56, ' + boardAlpha + ') !important; } ' +
+      '}',
       // Settingbar 面板 — 透明度跟随 navbar
       '.settingbar-panel { background-color: rgba(47, 65, 84, ' + navbarAlpha + ') !important; }',
-      '[data-user-color-scheme="dark"] .settingbar-panel { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; }'
+      '[data-user-color-scheme="dark"] .settingbar-panel { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; }',
+      '@media (prefers-color-scheme: dark) { ' +
+        ':root:not([data-user-color-scheme]) .settingbar-panel { background-color: rgba(31, 49, 68, ' + navbarAlpha + ') !important; } ' +
+      '}'
     ].join('\n');
   }
 
