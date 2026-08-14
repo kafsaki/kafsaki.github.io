@@ -55,10 +55,10 @@
   border-color: rgba(255, 255, 255, 0.06);
 }
 
+/* 防止 hamburger 图标跟随系统黑暗模式，只跟随站点手动切换 */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-user-color-scheme]) .settingbar-panel {
-    background-color: rgba(31, 49, 68, 0.95);
-    border-color: rgba(255, 255, 255, 0.06);
+  :root:not([data-user-color-scheme]) .navbar-toggler .animated-icon span {
+    background-color: #ffffff;
   }
 }
 
@@ -135,17 +135,17 @@
   transform: scale(1.15);
 }
 
-/* 移动端适配 */
+/* 移动端：水平垂直居中 */
 @media (max-width: 991.98px) {
   .settingbar-panel {
     position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    min-width: unset;
-    margin-top: 0;
-    border-radius: 12px 12px 0 0;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    min-width: 260px;
+    border-radius: 10px;
     padding: 20px 24px;
   }
 }
