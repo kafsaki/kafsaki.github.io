@@ -8,17 +8,19 @@
   position: relative;
 }
 
-/* 齿轮 SVG 图标 */
+/* 齿轮 SVG 图标 — 与主题 nav-link 图标大小一致 */
 #settingbar-toggle-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  vertical-align: middle;
+  width: 0.875rem;
+  height: 0.875rem;
+  vertical-align: -0.125em;
 }
 
 #settingbar-toggle-icon svg {
-  width: 1.2em;
-  height: 1.2em;
+  width: 0.875rem;
+  height: 0.875rem;
   fill: currentColor;
   transition: transform 0.4s ease;
 }
