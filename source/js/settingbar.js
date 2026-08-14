@@ -112,7 +112,14 @@
 
   // ========== 面板定位 ==========
 
+  function isMobile() {
+    return window.innerWidth <= 991.98;
+  }
+
   function repositionPanel(panel) {
+    // 竖屏模式使用 CSS 居中，不需要 JS 定位
+    if (isMobile()) return;
+
     var navbar = document.getElementById('navbar');
     if (!navbar || !panel) return;
 

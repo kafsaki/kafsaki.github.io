@@ -105,5 +105,5 @@ theme: fluid
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: git
-  repo: https://github.com/kafsaki/kafsaki.github.io.git
+  repo: git@github.com:kafsaki/kafsaki.github.io.git
   branch: main
