@@ -3,6 +3,11 @@
  * 毛玻璃、透明度与 navbar 保持一致
  * ============================================================ */
 
+/* 页面背景：优先使用 ASCII 字符画背景色，否则跟随主题 */
+body {
+  background-color: var(--ascii-body-bg, var(--body-bg-color));
+}
+
 /* 齿轮图标容器 */
 #settingbar-toggle-btn {
   position: relative;

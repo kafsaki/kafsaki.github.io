@@ -89,8 +89,7 @@
       Math.round(rgb.b * 0.7)
     );
 
-    document.body.style.backgroundColor = darkenedColor;
-    document.documentElement.style.setProperty('--body-bg-color', darkenedColor);
+    document.documentElement.style.setProperty('--ascii-body-bg', darkenedColor);
 
     // 创建 canvas
     var canvas = document.createElement('canvas');
