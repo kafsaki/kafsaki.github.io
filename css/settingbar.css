@@ -138,14 +138,12 @@
 /* 移动端适配 */
 @media (max-width: 991.98px) {
   .settingbar-panel {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    min-width: unset;
-    margin-top: 0;
-    border-radius: 12px 12px 0 0;
-    padding: 20px 24px;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    min-width: 260px;
+    border-radius: 10px;
   }
 }
