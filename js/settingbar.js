@@ -117,12 +117,8 @@
   }
 
   function repositionPanel(panel) {
-    // 移动端由 CSS 控制居中，JS 不干预
-    if (isMobile()) {
-      panel.style.top = '';
-      panel.style.right = '';
-      return;
-    }
+    // 竖屏模式使用 CSS 居中，不需要 JS 定位
+    if (isMobile()) return;
 
     var navbar = document.getElementById('navbar');
     if (!navbar || !panel) return;
