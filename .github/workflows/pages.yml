@@ -2,7 +2,7 @@ name: Deploy static site
 
 on:
   push:
-    branches: [source]
+    branches: [main]
 
 permissions:
   contents: read
