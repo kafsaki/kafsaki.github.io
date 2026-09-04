@@ -2,7 +2,7 @@ name: Validate static site
 
 on:
   pull_request:
-    branches: [source]
+    branches: [main]
 
 permissions:
   contents: read
