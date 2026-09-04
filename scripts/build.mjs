@@ -8,6 +8,7 @@ const contentDir = path.join(root, 'content');
 const publicDir = path.join(root, 'public');
 const templatesDir = path.join(root, 'src', 'templates');
 const stylesDir = path.join(root, 'src', 'styles');
+const scriptsDir = path.join(root, 'src', 'scripts');
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const slugify = value => String(value).toLowerCase().trim().replace(/[^\p{Letter}\p{Number}]+/gu, '-').replace(/^-|-$/g, '');
@@ -56,6 +57,7 @@ async function main() {
   await fs.rm(publicDir, { recursive: true, force: true });
   await fs.mkdir(path.join(publicDir, 'posts'), { recursive: true });
   await fs.copyFile(path.join(stylesDir, 'site.css'), path.join(publicDir, 'site.css'));
+  await fs.copyFile(path.join(scriptsDir, 'background.js'), path.join(publicDir, 'background.js'));
   const cards = posts.map(postCard).join('\n');
   const index = await renderTemplate('index.html', { title: "kafsaki's blog", content: cards, count: posts.length });
   await fs.writeFile(path.join(publicDir, 'index.html'), index);

@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Added a WebGL2 fluid pixel-dot background (`src/scripts/background.js`), ported from `apps/frontend/trae-background-demo` and extended with a persistent velocity field so the current follows the pointer.
+- Added a copy step for `src/scripts/background.js` to the build.
+
+### Changed
+- Replaced the flat page background with the animated dot field; header, cards, inputs and the article body are now translucent panels so the flow shows through.
+- Moved the base background colour from `body` to `html` so the fixed background layer paints above it.
+
 ## [2.0.0] - 2026-09-04
 
 ### Added
