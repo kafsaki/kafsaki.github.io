@@ -4,7 +4,6 @@ date: 2025-03-18 18:16:58
 tags: [hexo, web]
 categories:
   - [前端]
-typora-root-url: ./Studying-Hexo
 ---
 
 > Hexo官方文档：

@@ -9,9 +9,51 @@ const publicDir = path.join(root, 'public');
 const templatesDir = path.join(root, 'src', 'templates');
 const stylesDir = path.join(root, 'src', 'styles');
 const scriptsDir = path.join(root, 'src', 'scripts');
+const assetsDir = path.join(publicDir, 'assets');
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const slugify = value => String(value).toLowerCase().trim().replace(/[^\p{Letter}\p{Number}]+/gu, '-').replace(/^-|-$/g, '');
+
+const isExternalImage = href => /^(?:[a-z][a-z\d+.-]*:|\/\/|data:|#)/i.test(href) && !/^[a-z]:[\\/]/i.test(href);
+
+function resolveImageSource(href, sourceFile) {
+  const rawHref = String(href || '').trim();
+  if (!rawHref || isExternalImage(rawHref)) return rawHref;
+
+  const normalizedHref = rawHref.replace(/\\/g, '/');
+  const sourceRoot = path.resolve(contentDir);
+  const sourceDir = path.dirname(sourceFile);
+  const absoluteSource = /^[a-z]:\//i.test(normalizedHref)
+    ? path.win32.normalize(normalizedHref)
+    : path.resolve(sourceDir, normalizedHref);
+  const relativeAsset = path.relative(sourceRoot, absoluteSource);
+  if (!relativeAsset || relativeAsset.startsWith('..') || path.isAbsolute(relativeAsset)) return rawHref;
+
+  const assetUrl = `../assets/${relativeAsset.split(path.sep).join('/')}`;
+  return encodeURI(assetUrl);
+}
+
+function renderMarkdown(body, sourceFile) {
+  const renderer = new marked.Renderer();
+  renderer.image = ({ href, title, text }) => {
+    const src = resolveImageSource(href, sourceFile);
+    const titleAttribute = title ? ` title="${escapeHtml(title)}"` : '';
+    return `<img src="${escapeHtml(src)}" alt="${escapeHtml(text || '')}"${titleAttribute}>`;
+  };
+  return marked.parse(body, {
+    renderer
+  });
+}
+
+async function copyContentAssets(sourceDir, targetDir) {
+  await fs.mkdir(targetDir, { recursive: true });
+  for (const entry of await fs.readdir(sourceDir, { withFileTypes: true })) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+    if (entry.isDirectory()) await copyContentAssets(sourcePath, targetPath);
+    else if (!entry.name.endsWith('.md')) await fs.copyFile(sourcePath, targetPath);
+  }
+}
 
 function parseFrontMatter(raw) {
   const match = raw.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
@@ -39,7 +81,8 @@ async function readPosts() {
     const date = data.date || new Date().toISOString().slice(0, 10);
     const tags = Array.isArray(data.tags) ? data.tags : data.tags ? [data.tags] : [];
     const categories = Array.isArray(data.categories) ? data.categories : data.categories ? [data.categories] : [];
-    posts.push({ title, date: String(date).slice(0, 10), tags, categories, slug: slugify(title), html: marked.parse(body), excerpt: body.replace(/[#>*`\[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180) });
+    const sourcePath = path.join(contentDir, file);
+    posts.push({ title, date: String(date).slice(0, 10), tags, categories, slug: slugify(title), html: renderMarkdown(body, sourcePath), excerpt: body.replace(/[#>*`\[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180) });
   }
   return posts.sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -58,6 +101,7 @@ async function main() {
   const posts = await readPosts();
   await fs.rm(publicDir, { recursive: true, force: true });
   await fs.mkdir(path.join(publicDir, 'posts'), { recursive: true });
+  await copyContentAssets(contentDir, assetsDir);
   await fs.copyFile(path.join(stylesDir, 'site.css'), path.join(publicDir, 'site.css'));
   await fs.copyFile(path.join(scriptsDir, 'background.js'), path.join(publicDir, 'background.js'));
   await fs.copyFile(path.join(scriptsDir, 'interactions.js'), path.join(publicDir, 'interactions.js'));
