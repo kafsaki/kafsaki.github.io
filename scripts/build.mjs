@@ -49,7 +49,9 @@ async function renderTemplate(name, data) {
   return template.replace(/\{\{([\s\S]*?)\}\}/g, (_, key) => data[key.trim()] ?? '');
 }
 
-const postCard = post => `<article class="post-card"><div class="post-meta"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time>${post.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><a class="read-more" href="posts/${post.slug}.html">阅读全文 <span aria-hidden="true">→</span></a></article>`;
+const dateAnchor = post => `archives.html#date-${slugify(post.date)}`;
+const tagAnchor = tag => `tags.html#tag-${slugify(tag)}`;
+const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><a class="meta-chip" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>${post.tags.map(tag => `<a class="meta-chip" href="${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('')}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><a class="read-more" href="posts/${post.slug}.html">阅读全文 <span aria-hidden="true">→</span></a></article>`;
 
 async function main() {
   if (process.argv.includes('--clean')) { await fs.rm(publicDir, { recursive: true, force: true }); return; }
@@ -58,6 +60,7 @@ async function main() {
   await fs.mkdir(path.join(publicDir, 'posts'), { recursive: true });
   await fs.copyFile(path.join(stylesDir, 'site.css'), path.join(publicDir, 'site.css'));
   await fs.copyFile(path.join(scriptsDir, 'background.js'), path.join(publicDir, 'background.js'));
+  await fs.copyFile(path.join(scriptsDir, 'interactions.js'), path.join(publicDir, 'interactions.js'));
   const cards = posts.map(postCard).join('\n');
   const index = await renderTemplate('index.html', { title: "kafsaki's blog", content: cards, count: posts.length });
   await fs.writeFile(path.join(publicDir, 'index.html'), index);
@@ -66,10 +69,14 @@ async function main() {
     await fs.writeFile(path.join(publicDir, 'posts', `${post.slug}.html`), html);
   }
   const archiveGroups = Object.groupBy ? Object.groupBy(posts, post => post.date.slice(0, 7)) : posts.reduce((groups, post) => ((groups[post.date.slice(0, 7)] ??= []).push(post), groups), {});
-  const archive = Object.entries(archiveGroups).map(([month, entries]) => `<section><h2>${month}</h2>${entries.map(postCard).join('')}</section>`).join('');
+  const archive = Object.entries(archiveGroups).map(([month, entries]) => {
+    const dates = Object.groupBy ? Object.groupBy(entries, post => post.date) : entries.reduce((groups, post) => ((groups[post.date] ??= []).push(post), groups), {});
+    const dateSections = Object.entries(dates).map(([date, dateEntries]) => `<section class="archive-date" id="date-${slugify(date)}"><h3>${escapeHtml(date)}</h3>${dateEntries.map(postCard).join('')}</section>`).join('');
+    return `<section class="archive-month"><h2>${month}</h2>${dateSections}</section>`;
+  }).join('');
   await fs.writeFile(path.join(publicDir, 'archives.html'), await renderTemplate('page.html', { title: '归档', content: archive }));
   const tags = [...new Set(posts.flatMap(post => post.tags))].sort();
-  const tagSections = tags.map(tag => `<section id="${slugify(tag)}"><h2>${escapeHtml(tag)}</h2>${posts.filter(post => post.tags.includes(tag)).map(postCard).join('')}</section>`).join('');
+  const tagSections = tags.map(tag => `<section class="tag-section" id="tag-${slugify(tag)}"><h2>${escapeHtml(tag)}</h2>${posts.filter(post => post.tags.includes(tag)).map(postCard).join('')}</section>`).join('');
   await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('page.html', { title: '标签', content: tagSections }));
   await fs.writeFile(path.join(publicDir, 'about.html'), await renderTemplate('page.html', { title: '关于', content: '<p>记录技术学习、系统编程与 AI Agent 实践。</p>' }));
   console.log(`Built ${posts.length} posts into ${path.relative(root, publicDir)}/`);
