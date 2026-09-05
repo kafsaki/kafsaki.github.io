@@ -3,6 +3,8 @@ name: Deploy static site
 on:
   push:
     branches: [main]
+    paths:
+      - 'public/**'
 
 permissions:
   contents: read
