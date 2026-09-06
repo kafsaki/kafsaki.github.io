@@ -152,10 +152,15 @@ async function main() {
     return `<section class="category-branch tag-branch" id="tag-${slugify(tag)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${tag}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${tag} 分类筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
   })() : '';
   const untaggedMap = untaggedBranch ? `<section class="category-map tag-map tag-untagged-map" id="untagged-map" aria-label="无标签文章"><div class="category-root"><span class="category-root-label">NO TAG</span><strong>${untaggedPosts.length} 篇文章</strong></div><div class="category-branches">${untaggedBranch}</div></section>` : '';
-  await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('tags.html', { count: tagEntries.length, content: tagBranches, untaggedMap }));
+  await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('tags.html', { count: tagEntries.length, postCount: posts.length, content: tagBranches, untaggedMap }));
   const categoryGroups = new Map();
+  const uncategorizedPosts = [];
   for (const post of posts) {
-    const categories = post.categories.length ? post.categories : ['未分类'];
+    if (!post.categories.length) {
+      uncategorizedPosts.push(post);
+      continue;
+    }
+    const categories = post.categories;
     for (const category of categories) {
       if (!categoryGroups.has(category)) categoryGroups.set(category, []);
       categoryGroups.get(category).push(post);
@@ -170,7 +175,15 @@ async function main() {
     }).join('');
     return `<section class="category-branch" id="category-${slugify(category)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(category)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(category)} 标签筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
   }).join('');
-  await fs.writeFile(path.join(publicDir, 'categories.html'), await renderTemplate('categories.html', { count: posts.length, content: categoryBranches }));
+  const uncategorizedMap = uncategorizedPosts.length ? (() => {
+    const category = '未分类';
+    const categoryTags = [...new Set(uncategorizedPosts.flatMap(post => post.tags))].sort();
+    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部标签</button>`, ...categoryTags.map(tag => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(tag))}" aria-pressed="false">${escapeHtml(tag)}</button>`)].join('');
+    const postNodes = uncategorizedPosts.map(post => `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(post.tags.map(tag => slugify(tag)).join(' '))}"><span class="category-post-title">${escapeHtml(post.title)}</span><time class="category-post-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>`).join('');
+    const branch = `<section class="category-branch" id="category-${slugify(category)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${category}</span><small>${uncategorizedPosts.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${category} 标签筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
+    return `<section class="category-map category-uncategorized-map" id="uncategorized-map" aria-label="未分类文章"><div class="category-root"><span class="category-root-label">UNCATEGORIZED</span><strong>${uncategorizedPosts.length} 篇文章</strong></div><div class="category-branches">${branch}</div></section>`;
+  })() : '';
+  await fs.writeFile(path.join(publicDir, 'categories.html'), await renderTemplate('categories.html', { count: posts.length, categoryCount: categoryGroups.size, content: categoryBranches, uncategorizedMap }));
   await fs.writeFile(path.join(publicDir, 'about.html'), await renderTemplate('page.html', { title: '关于', content: '<p>记录技术学习、系统编程与 AI Agent 实践。</p>' }));
   console.log(`Built ${posts.length} posts into ${path.relative(root, publicDir)}/`);
 }

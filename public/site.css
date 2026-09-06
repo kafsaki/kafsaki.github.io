@@ -60,8 +60,7 @@
 .category-post-title{min-width:0;overflow-wrap:anywhere}
 .category-post-date{flex:0 0 auto;margin-left:auto;color:var(--muted);font:600 .68rem/1.2 ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",sans-serif;letter-spacing:.04em;white-space:nowrap}
 .category-post-node:hover .category-post-date,.category-post-node:focus-visible .category-post-date,.category-post-node.is-highlighted .category-post-date{color:var(--text)}
-.tag-taxonomy{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
-@media(max-width:900px){.tag-taxonomy{grid-template-columns:1fr}}
+.tag-taxonomy,.category-taxonomy{display:grid;grid-template-columns:1fr;gap:28px;align-items:start}
 
 /* Compact metadata and navigation controls keep the console visual language consistent. */
 .post-meta{align-items:center;gap:7px}
