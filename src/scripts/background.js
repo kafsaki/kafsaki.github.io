@@ -13,17 +13,17 @@
  * static frame when the visitor asks for reduced motion.
  */
 (() => {
-  'use strict';
+  "use strict";
 
-  const canvas = document.querySelector('#bg-pixels');
+  const canvas = document.querySelector("#bg-pixels");
   if (!canvas) return;
 
-  const gl = canvas.getContext('webgl2', {
+  const gl = canvas.getContext("webgl2", {
     alpha: true,
     antialias: false,
     depth: false,
     premultipliedAlpha: false,
-    powerPreference: 'low-power',
+    powerPreference: "low-power",
     stencil: false,
   });
 
@@ -224,7 +224,8 @@ void main() {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+      throw new Error(gl.getShaderInfoLog(shader));
     return shader;
   }
 
@@ -233,22 +234,34 @@ void main() {
     gl.attachShader(program, compile(gl.VERTEX_SHADER, VERTEX));
     gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragment));
     gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+      throw new Error(gl.getProgramInfoLog(program));
     const uniforms = {};
     const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
     for (let i = 0; i < count; i++) {
       const name = gl.getActiveUniform(program, i).name;
       uniforms[name] = gl.getUniformLocation(program, name);
     }
-    return { program, uniforms, position: gl.getAttribLocation(program, 'aPosition') };
+    return {
+      program,
+      uniforms,
+      position: gl.getAttribLocation(program, "aPosition"),
+    };
   }
 
   function readColor(variable, fallback) {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue(variable)
+      .trim();
     const hex = /^#([\da-f]{3}|[\da-f]{6})$/i.exec(raw);
     if (!hex) return fallback;
-    const digits = hex[1].length === 3 ? hex[1].replace(/./g, char => char + char) : hex[1];
-    return [0, 2, 4].map(offset => parseInt(digits.slice(offset, offset + 2), 16) / 255);
+    const digits =
+      hex[1].length === 3
+        ? hex[1].replace(/./g, (char) => char + char)
+        : hex[1];
+    return [0, 2, 4].map(
+      (offset) => parseInt(digits.slice(offset, offset + 2), 16) / 255,
+    );
   }
 
   let flowPass;
@@ -259,19 +272,23 @@ void main() {
     fieldPass = createProgram(FIELD);
     dotPass = createProgram(DOTS);
   } catch (error) {
-    console.warn('Background shaders failed to build:', error);
+    console.warn("Background shaders failed to build:", error);
     canvas.remove();
     return;
   }
 
   const quad = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+    gl.STATIC_DRAW,
+  );
 
-  const halfFloat = gl.getExtension('EXT_color_buffer_float');
-  const accent = readColor('--accent', [0.388, 0.702, 0.929]);
-  const highlight = readColor('--text', [0.929, 0.949, 0.969]);
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const halfFloat = gl.getExtension("EXT_color_buffer_float");
+  const accent = readColor("--accent", [0.388, 0.702, 0.929]);
+  const highlight = readColor("--text", [0.929, 0.949, 0.969]);
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   let flowTargets = [];
   let fieldTarget = null;
@@ -295,11 +312,27 @@ void main() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, targetWidth, targetHeight, 0, format, type, null);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      internalFormat,
+      targetWidth,
+      targetHeight,
+      0,
+      format,
+      type,
+      null,
+    );
 
     const framebuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      texture,
+      0,
+    );
     return { texture, framebuffer, width: targetWidth, height: targetHeight };
   }
 
@@ -331,7 +364,12 @@ void main() {
       createTarget(CONFIG.flowScale, internalFormat, gl.RGBA, type),
       createTarget(CONFIG.flowScale, internalFormat, gl.RGBA, type),
     ];
-    fieldTarget = createTarget(CONFIG.fieldScale, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE);
+    fieldTarget = createTarget(
+      CONFIG.fieldScale,
+      gl.RGBA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+    );
 
     // 0.5 is the encoded zero velocity.
     gl.clearColor(0.5, 0.5, 0.5, 0.5);
@@ -344,7 +382,12 @@ void main() {
 
   function usePass(pass, target) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, target ? target.framebuffer : null);
-    gl.viewport(0, 0, target ? target.width : width, target ? target.height : height);
+    gl.viewport(
+      0,
+      0,
+      target ? target.width : width,
+      target ? target.height : height,
+    );
     gl.useProgram(pass.program);
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     gl.enableVertexAttribArray(pass.position);
@@ -392,7 +435,12 @@ void main() {
     gl.uniform1f(dotPass.uniforms.uPixelSize, CONFIG.pixelSize * dpr);
     gl.uniform1f(dotPass.uniforms.uPixelGap, CONFIG.pixelGap * dpr);
     gl.uniform3f(dotPass.uniforms.uAccent, accent[0], accent[1], accent[2]);
-    gl.uniform3f(dotPass.uniforms.uHighlight, highlight[0], highlight[1], highlight[2]);
+    gl.uniform3f(
+      dotPass.uniforms.uHighlight,
+      highlight[0],
+      highlight[1],
+      highlight[2],
+    );
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     pointerPrev = pointer;
@@ -400,7 +448,8 @@ void main() {
 
   function frame(now) {
     rafId = 0;
-    const dt = Math.min(Math.max((now - lastFrame) / 1000, 0), 1 / 30) || 1 / 60;
+    const dt =
+      Math.min(Math.max((now - lastFrame) / 1000, 0), 1 / 30) || 1 / 60;
     lastFrame = now;
     time += dt;
     render(dt);
@@ -422,33 +471,67 @@ void main() {
     schedule();
   }
 
-  window.addEventListener('pointermove', event => {
-    if (event.pointerType === 'touch') return;
-    pointer = [event.clientX / window.innerWidth, 1 - event.clientY / window.innerHeight];
-    pointerInside = 1;
-  }, { passive: true });
+  window.addEventListener(
+    "pointermove",
+    (event) => {
+      if (event.pointerType === "touch") return;
+      pointer = [
+        event.clientX / window.innerWidth,
+        1 - event.clientY / window.innerHeight,
+      ];
+      pointerInside = 1;
+    },
+    { passive: true },
+  );
 
-  window.addEventListener('pointerdown', event => {
-    pointer = [event.clientX / window.innerWidth, 1 - event.clientY / window.innerHeight];
-    pointerInside = 1;
-  }, { passive: true });
+  window.addEventListener(
+    "pointerdown",
+    (event) => {
+      pointer = [
+        event.clientX / window.innerWidth,
+        1 - event.clientY / window.innerHeight,
+      ];
+      pointerInside = 1;
+    },
+    { passive: true },
+  );
 
-  window.addEventListener('touchmove', event => {
-    const touch = event.touches[0];
-    if (!touch) return;
-    pointer = [touch.clientX / window.innerWidth, 1 - touch.clientY / window.innerHeight];
-    pointerInside = 1;
-  }, { passive: true });
+  window.addEventListener(
+    "touchmove",
+    (event) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      pointer = [
+        touch.clientX / window.innerWidth,
+        1 - touch.clientY / window.innerHeight,
+      ];
+      pointerInside = 1;
+    },
+    { passive: true },
+  );
 
-  document.documentElement.addEventListener('pointerleave', () => { pointerInside = 0; });
-  window.addEventListener('touchend', () => { pointerInside = 0; }, { passive: true });
-  window.addEventListener('blur', () => { pointerInside = 0; });
-  document.addEventListener('visibilitychange', () => {
+  document.documentElement.addEventListener("pointerleave", () => {
+    pointerInside = 0;
+  });
+  window.addEventListener(
+    "touchend",
+    () => {
+      pointerInside = 0;
+    },
+    { passive: true },
+  );
+  window.addEventListener("blur", () => {
+    pointerInside = 0;
+  });
+  document.addEventListener("visibilitychange", () => {
     lastFrame = performance.now();
     schedule();
   });
-  reducedMotion.addEventListener('change', () => {
-    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+  reducedMotion.addEventListener("change", () => {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
     start();
   });
   new ResizeObserver(() => {

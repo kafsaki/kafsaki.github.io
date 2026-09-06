@@ -1,2 +1,37 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>分类 - kafsaki's blog</title><link rel="stylesheet" href="site.css"><script defer src="background.js"></script><script defer src="interactions.js"></script><script defer src="taxonomy.js"></script></head><body><div id="bg-stage" aria-hidden="true"><canvas id="bg-pixels"></canvas></div><main class="article-shell category-shell"><a class="back" href="index.html">← 返回首页</a><header class="page-title"><p class="section-kicker">CONTENT / CATEGORIES</p><h1>分类</h1><p class="page-lead">按主题浏览文章，也可以在分类内按标签定位。</p></header><div class="category-taxonomy"><section class="taxonomy-map" id="taxonomy-map" aria-label="文章分类思维导图"><div class="taxonomy-root"><span class="taxonomy-root-label">ALL CATEGORIES</span><strong>{{ categoryCount }} 个分类 · {{ count }} 篇文章</strong></div><div class="taxonomy-branches">{{ content }}</div></section>{{ uncategorizedMap }}</div></main></body></html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>分类 - kafsaki's blog</title>
+    <link rel="stylesheet" href="site.css" />
+    <script defer src="background.js"></script>
+    <script defer src="interactions.js"></script>
+    <script defer src="taxonomy.js"></script>
+  </head>
+  <body>
+    <div id="bg-stage" aria-hidden="true"><canvas id="bg-pixels"></canvas></div>
+    <main class="article-shell category-shell">
+      <a class="back" href="index.html">← 返回首页</a>
+      <header class="page-title">
+        <p class="section-kicker">CONTENT / CATEGORIES</p>
+        <h1>分类</h1>
+        <p class="page-lead">按主题浏览文章，也可以在分类内按标签定位。</p>
+      </header>
+      <div class="category-taxonomy">
+        <section
+          class="taxonomy-map"
+          id="taxonomy-map"
+          aria-label="文章分类思维导图"
+        >
+          <div class="taxonomy-root">
+            <span class="taxonomy-root-label">ALL CATEGORIES</span
+            ><strong>{{ categoryCount }} 个分类 · {{ count }} 篇文章</strong>
+          </div>
+          <div class="taxonomy-branches">{{ content }}</div>
+        </section>
+        {{ uncategorizedMap }}
+      </div>
+    </main>
+  </body>
+</html>
