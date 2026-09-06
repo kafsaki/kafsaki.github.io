@@ -132,8 +132,17 @@ async function main() {
   }).join('');
   await fs.writeFile(path.join(publicDir, 'archives.html'), await renderTemplate('page.html', { title: '归档', content: archive }));
   const tags = [...new Set(posts.flatMap(post => post.tags))].sort();
-  const tagSections = tags.map(tag => `<section class="tag-section" id="tag-${slugify(tag)}"><h2>${escapeHtml(tag)}</h2>${posts.filter(post => post.tags.includes(tag)).map(postCard).join('')}</section>`).join('');
-  await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('page.html', { title: '标签', content: tagSections }));
+  const tagBranches = tags.map(tag => {
+    const entries = posts.filter(post => post.tags.includes(tag));
+    const categoryFilters = [...new Set(entries.flatMap(postCategories))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>`, ...categoryFilters.map(category => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(category))}" aria-pressed="false">${escapeHtml(category)}</button>`)].join('');
+    const postNodes = entries.map(post => {
+      const categoryKeys = postCategories(post).map(category => slugify(category)).join(' ');
+      return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(categoryKeys)}"><span class="category-post-title">${escapeHtml(post.title)}</span><time class="category-post-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>`;
+    }).join('');
+    return `<section class="category-branch tag-branch" id="tag-${slugify(tag)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(tag)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(tag)} 分类筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
+  }).join('');
+  await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('tags.html', { count: tags.length, content: tagBranches }));
   const categoryGroups = new Map();
   for (const post of posts) {
     const categories = post.categories.length ? post.categories : ['未分类'];
@@ -147,7 +156,7 @@ async function main() {
     const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>`, ...categoryTags.map(tag => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(tag))}" aria-pressed="false">${escapeHtml(tag)}</button>`)].join('');
     const postNodes = entries.map(post => {
       const tagKeys = post.tags.map(tag => slugify(tag)).join(' ');
-      return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(tagKeys)}">${escapeHtml(post.title)}</a>`;
+      return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(tagKeys)}"><span class="category-post-title">${escapeHtml(post.title)}</span><time class="category-post-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>`;
     }).join('');
     return `<section class="category-branch" id="category-${slugify(category)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(category)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(category)} 标签筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
   }).join('');

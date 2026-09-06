@@ -1,4 +1,4 @@
-const categoryMap = document.querySelector('#category-map');
+const categoryMap = document.querySelector('#category-map, #tag-map');
 
 if (categoryMap) {
   const openBranch = branch => {
