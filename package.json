@@ -4,9 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/build.mjs --watch",
-    "build": "node scripts/build.mjs",
-    "clean": "node scripts/build.mjs --clean"
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
     "marked": "^4.3.0"
