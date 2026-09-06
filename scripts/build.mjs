@@ -132,8 +132,9 @@ async function main() {
   }).join('');
   await fs.writeFile(path.join(publicDir, 'archives.html'), await renderTemplate('page.html', { title: '归档', content: archive }));
   const tags = [...new Set(posts.flatMap(post => post.tags))].sort();
-  const tagBranches = tags.map(tag => {
-    const entries = posts.filter(post => post.tags.includes(tag));
+  const untaggedPosts = posts.filter(post => post.tags.length === 0);
+  const tagEntries = [...tags.map(tag => [tag, posts.filter(post => post.tags.includes(tag))]), ...(untaggedPosts.length ? [['无标签', untaggedPosts]] : [])];
+  const tagBranches = tagEntries.map(([tag, entries]) => {
     const categoryFilters = [...new Set(entries.flatMap(postCategories))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
     const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部分类</button>`, ...categoryFilters.map(category => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(category))}" aria-pressed="false">${escapeHtml(category)}</button>`)].join('');
     const postNodes = entries.map(post => {
@@ -142,7 +143,7 @@ async function main() {
     }).join('');
     return `<section class="category-branch tag-branch" id="tag-${slugify(tag)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(tag)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(tag)} 分类筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
   }).join('');
-  await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('tags.html', { count: tags.length, content: tagBranches }));
+  await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('tags.html', { count: tagEntries.length, content: tagBranches }));
   const categoryGroups = new Map();
   for (const post of posts) {
     const categories = post.categories.length ? post.categories : ['未分类'];
