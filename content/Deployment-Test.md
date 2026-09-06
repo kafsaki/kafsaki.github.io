@@ -2,6 +2,7 @@
 title: 部署流程测试
 date: 2026-09-04 21:00:00
 tags: [test, deployment]
+categories: [工程实践, 部署]
 ---
 
 # 部署流程测试

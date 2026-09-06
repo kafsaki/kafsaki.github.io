@@ -2,8 +2,7 @@
 title: Studying Hexo
 date: 2025-03-18 18:16:58
 tags: [hexo, web]
-categories:
-  - [前端]
+categories: [前端, 静态站点]
 ---
 
 > Hexo官方文档：

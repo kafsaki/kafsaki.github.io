@@ -105,6 +105,7 @@ async function main() {
   await fs.copyFile(path.join(stylesDir, 'site.css'), path.join(publicDir, 'site.css'));
   await fs.copyFile(path.join(scriptsDir, 'background.js'), path.join(publicDir, 'background.js'));
   await fs.copyFile(path.join(scriptsDir, 'interactions.js'), path.join(publicDir, 'interactions.js'));
+  await fs.copyFile(path.join(scriptsDir, 'categories.js'), path.join(publicDir, 'categories.js'));
   const cards = posts.map(postCard).join('\n');
   const index = await renderTemplate('index.html', { title: "kafsaki's blog", content: cards, count: posts.length });
   await fs.writeFile(path.join(publicDir, 'index.html'), index);
@@ -122,6 +123,24 @@ async function main() {
   const tags = [...new Set(posts.flatMap(post => post.tags))].sort();
   const tagSections = tags.map(tag => `<section class="tag-section" id="tag-${slugify(tag)}"><h2>${escapeHtml(tag)}</h2>${posts.filter(post => post.tags.includes(tag)).map(postCard).join('')}</section>`).join('');
   await fs.writeFile(path.join(publicDir, 'tags.html'), await renderTemplate('page.html', { title: '标签', content: tagSections }));
+  const categoryGroups = new Map();
+  for (const post of posts) {
+    const categories = post.categories.length ? post.categories : ['未分类'];
+    for (const category of categories) {
+      if (!categoryGroups.has(category)) categoryGroups.set(category, []);
+      categoryGroups.get(category).push(post);
+    }
+  }
+  const categoryBranches = [...categoryGroups.entries()].sort(([a], [b]) => a.localeCompare(b, 'zh-CN')).map(([category, entries]) => {
+    const categoryTags = [...new Set(entries.flatMap(post => post.tags))].sort();
+    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>`, ...categoryTags.map(tag => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(tag))}" aria-pressed="false">${escapeHtml(tag)}</button>`)].join('');
+    const postNodes = entries.map(post => {
+      const tagKeys = post.tags.map(tag => slugify(tag)).join(' ');
+      return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(tagKeys)}">${escapeHtml(post.title)}</a>`;
+    }).join('');
+    return `<section class="category-branch"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(category)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(category)} 标签筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
+  }).join('');
+  await fs.writeFile(path.join(publicDir, 'categories.html'), await renderTemplate('categories.html', { count: posts.length, content: categoryBranches }));
   await fs.writeFile(path.join(publicDir, 'about.html'), await renderTemplate('page.html', { title: '关于', content: '<p>记录技术学习、系统编程与 AI Agent 实践。</p>' }));
   console.log(`Built ${posts.length} posts into ${path.relative(root, publicDir)}/`);
 }
