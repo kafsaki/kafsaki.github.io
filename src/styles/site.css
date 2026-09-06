@@ -23,3 +23,13 @@
 .toolbar input::placeholder{color:rgba(154,169,184,.7)}
 .search-hint{display:grid;place-items:center;width:19px;height:19px;border:1px solid rgba(154,169,184,.32);border-radius:3px;color:var(--muted);font:600 .72rem/1 ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:640px){.site-nav{align-items:center}.site-nav::before{display:none}.brand-subtitle{letter-spacing:.11em}.nav-links{gap:2px}.nav-link{padding:7px 8px}.nav-index{display:none}.toolbar{display:grid;grid-template-columns:1fr;gap:10px}.search-heading{min-width:0;padding:0 2px;border-right:0}.search-control{min-height:42px}.toolbar input{width:100%}}
+
+/* Compact metadata and navigation controls keep the console visual language consistent. */
+.post-meta{align-items:center;gap:7px}
+.meta-chip{min-height:25px;padding:4px 9px;border-radius:3px;background:rgba(11,14,19,.28);border-color:rgba(154,169,184,.3);color:var(--muted);font:600 .69rem/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.04em}
+.meta-chip.meta-date{border-color:rgba(99,179,237,.5);color:var(--accent);font-variant-numeric:tabular-nums}
+.meta-chip.meta-tag{color:var(--text);text-transform:lowercase}
+.meta-chip:hover,.meta-chip:focus-visible{background:rgba(99,179,237,.14);border-color:var(--accent);color:var(--text);box-shadow:0 0 12px rgba(99,179,237,.1)}
+.back{display:inline-flex;align-items:center;gap:8px;margin-bottom:32px;padding:8px 12px;border:1px solid rgba(99,179,237,.32);border-radius:3px;background:rgba(11,14,19,.28);color:var(--muted);font:600 .76rem/1.2 ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",sans-serif;letter-spacing:.04em;transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
+.back:hover,.back:focus-visible{border-color:var(--accent);background:rgba(99,179,237,.12);color:var(--text);text-decoration:none;box-shadow:0 0 14px rgba(99,179,237,.1)}
+.back:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

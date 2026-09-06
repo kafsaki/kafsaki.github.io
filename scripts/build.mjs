@@ -94,7 +94,7 @@ async function renderTemplate(name, data) {
 
 const dateAnchor = post => `archives.html#date-${slugify(post.date)}`;
 const tagAnchor = tag => `tags.html#tag-${slugify(tag)}`;
-const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><a class="meta-chip" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>${post.tags.map(tag => `<a class="meta-chip" href="${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('')}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><a class="read-more" href="posts/${post.slug}.html">阅读全文 <span aria-hidden="true">→</span></a></article>`;
+const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><a class="meta-chip meta-date" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>${post.tags.map(tag => `<a class="meta-chip meta-tag" href="${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('')}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><a class="read-more" href="posts/${post.slug}.html">阅读全文 <span aria-hidden="true">→</span></a></article>`;
 
 async function main() {
   if (process.argv.includes('--clean')) { await fs.rm(publicDir, { recursive: true, force: true }); return; }
