@@ -56,9 +56,9 @@
 .category-post-node.is-muted{opacity:.3}
 @media(max-width:640px){.category-map{grid-template-columns:1fr;gap:16px}.category-root{position:static}.category-branches::before,.category-branch::before{display:none}.category-branch{display:block}.category-branch-body{margin:8px 0 0 12px}.category-node{padding:11px 12px}}
 
-.category-post-node{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.category-post-node{display:flex;align-items:center;justify-content:flex-start;gap:16px}
 .category-post-title{min-width:0;overflow-wrap:anywhere}
-.category-post-date{flex:0 0 auto;color:var(--muted);font:600 .68rem/1.2 ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",sans-serif;letter-spacing:.04em;white-space:nowrap}
+.category-post-date{flex:0 0 auto;margin-left:auto;color:var(--muted);font:600 .68rem/1.2 ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",sans-serif;letter-spacing:.04em;white-space:nowrap}
 .category-post-node:hover .category-post-date,.category-post-node:focus-visible .category-post-date,.category-post-node.is-highlighted .category-post-date{color:var(--text)}
 
 /* Compact metadata and navigation controls keep the console visual language consistent. */

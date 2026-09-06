@@ -135,7 +135,7 @@ async function main() {
   const tagBranches = tags.map(tag => {
     const entries = posts.filter(post => post.tags.includes(tag));
     const categoryFilters = [...new Set(entries.flatMap(postCategories))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
-    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>`, ...categoryFilters.map(category => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(category))}" aria-pressed="false">${escapeHtml(category)}</button>`)].join('');
+    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部分类</button>`, ...categoryFilters.map(category => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(category))}" aria-pressed="false">${escapeHtml(category)}</button>`)].join('');
     const postNodes = entries.map(post => {
       const categoryKeys = postCategories(post).map(category => slugify(category)).join(' ');
       return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(categoryKeys)}"><span class="category-post-title">${escapeHtml(post.title)}</span><time class="category-post-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>`;
@@ -153,7 +153,7 @@ async function main() {
   }
   const categoryBranches = [...categoryGroups.entries()].sort(([a], [b]) => a.localeCompare(b, 'zh-CN')).map(([category, entries]) => {
     const categoryTags = [...new Set(entries.flatMap(post => post.tags))].sort();
-    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>`, ...categoryTags.map(tag => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(tag))}" aria-pressed="false">${escapeHtml(tag)}</button>`)].join('');
+    const filters = [`<button class="category-filter is-active" type="button" data-filter="all" aria-pressed="true">全部标签</button>`, ...categoryTags.map(tag => `<button class="category-filter" type="button" data-filter="${escapeHtml(slugify(tag))}" aria-pressed="false">${escapeHtml(tag)}</button>`)].join('');
     const postNodes = entries.map(post => {
       const tagKeys = post.tags.map(tag => slugify(tag)).join(' ');
       return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(tagKeys)}"><span class="category-post-title">${escapeHtml(post.title)}</span><time class="category-post-date" datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>`;
