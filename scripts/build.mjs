@@ -130,7 +130,13 @@ async function main() {
     const dateSections = Object.entries(dates).map(([date, dateEntries]) => `<section class="archive-date" id="date-${slugify(date)}"><h3>${escapeHtml(date)}</h3>${dateEntries.map(postCard).join('')}</section>`).join('');
     return `<section class="archive-month"><h2>${month}</h2>${dateSections}</section>`;
   }).join('');
-  await fs.writeFile(path.join(publicDir, 'archives.html'), await renderTemplate('page.html', { title: '归档', kicker: 'CONTENT / ARCHIVES', lead: '按发布时间浏览文章。', content: archive }));
+  const archiveTimelineGroups = Object.entries(archiveGroups).map(([month, entries]) => {
+    const dates = [...new Set(entries.map(post => post.date))];
+    const links = dates.map(date => `<a class="archive-timeline-link" href="#date-${slugify(date)}"><span>${escapeHtml(date.slice(5))}</span><small>${entries.filter(post => post.date === date).length} 篇</small></a>`).join('');
+    return `<div class="archive-timeline-group"><span class="archive-timeline-month">${escapeHtml(month)}</span>${links}</div>`;
+  }).join('');
+  const archiveTimeline = `<aside class="archive-timeline" aria-label="归档时间轴"><div class="archive-timeline-heading"><span class="section-kicker">TIMELINE</span><span>按日期跳转</span></div><nav class="archive-timeline-nav">${archiveTimelineGroups}</nav></aside>`;
+  await fs.writeFile(path.join(publicDir, 'archives.html'), await renderTemplate('page.html', { title: '归档', kicker: 'CONTENT / ARCHIVES', lead: '按发布时间浏览文章。', content: archive, sidebar: archiveTimeline }));
   const tags = [...new Set(posts.flatMap(post => post.tags))].sort();
   const untaggedPosts = posts.filter(post => post.tags.length === 0);
   const tagEntries = tags.map(tag => [tag, posts.filter(post => post.tags.includes(tag))]);
@@ -184,7 +190,7 @@ async function main() {
     return `<section class="taxonomy-map taxonomy-uncategorized-map" id="uncategorized-map" aria-label="未分类文章"><div class="taxonomy-root"><span class="taxonomy-root-label">UNCATEGORIZED</span><strong>${uncategorizedPosts.length} 篇文章</strong></div><div class="taxonomy-branches">${branch}</div></section>`;
   })() : '';
   await fs.writeFile(path.join(publicDir, 'categories.html'), await renderTemplate('categories.html', { count: posts.length, categoryCount: categoryGroups.size, content: categoryBranches, uncategorizedMap }));
-  await fs.writeFile(path.join(publicDir, 'about.html'), await renderTemplate('page.html', { title: '关于', kicker: 'ABOUT / KAFSAKI', lead: '记录技术学习、系统编程与 AI Agent 实践。', content: '<p>这里保存个人技术实践、问题复盘与持续构建记录。</p>' }));
+  await fs.writeFile(path.join(publicDir, 'about.html'), await renderTemplate('page.html', { title: '关于', kicker: 'ABOUT / KAFSAKI', lead: '记录技术学习、系统编程与 AI Agent 实践。', content: '<p>这里保存个人技术实践、问题复盘与持续构建记录。</p>', sidebar: '' }));
   console.log(`Built ${posts.length} posts into ${path.relative(root, publicDir)}/`);
 }
 
