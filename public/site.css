@@ -65,3 +65,16 @@
 .back{display:inline-flex;align-items:center;gap:8px;margin-bottom:32px;padding:8px 12px;border:1px solid rgba(99,179,237,.32);border-radius:3px;background:rgba(11,14,19,.28);color:var(--muted);font:600 .76rem/1.2 ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",sans-serif;letter-spacing:.04em;transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease}
 .back:hover,.back:focus-visible{border-color:var(--accent);background:rgba(99,179,237,.12);color:var(--text);text-decoration:none;box-shadow:0 0 14px rgba(99,179,237,.1)}
 .back:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* Post metadata follows a stable hierarchy: category, tags, then date and reading time. */
+.post-meta{display:grid;gap:7px;align-items:start}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px;min-height:25px}
+.meta-categories{order:1}
+.meta-tags{order:2}
+.meta-chip.meta-category{border-color:rgba(99,179,237,.58);color:var(--accent);font-weight:700}
+.meta-chip.meta-tag{border-color:rgba(154,169,184,.34);color:var(--muted)}
+.post-footer,.article-meta-bottom{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:15px}
+.reading-time{color:var(--muted);font:600 .69rem/1.1 ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",sans-serif;letter-spacing:.04em}
+.article-meta{display:grid;gap:8px;margin-bottom:20px}
+.article-meta .meta-row{min-height:25px}
+.article-meta-bottom{margin-top:2px;padding-top:10px;border-top:1px solid rgba(48,64,82,.65)}

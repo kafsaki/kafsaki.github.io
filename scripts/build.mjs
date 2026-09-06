@@ -13,6 +13,12 @@ const assetsDir = path.join(publicDir, 'assets');
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const slugify = value => String(value).toLowerCase().trim().replace(/[^\p{Letter}\p{Number}]+/gu, '-').replace(/^-|-$/g, '');
+const readingMinutes = body => {
+  const plain = body.replace(/```[\s\S]*?```/g, '').replace(/[#>*`\[\]()_~]/g, ' ').replace(/\s+/g, ' ').trim();
+  const cjkCount = (plain.match(/[\u3400-\u9fff]/g) || []).length;
+  const wordCount = (plain.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) || []).length;
+  return Math.max(1, Math.ceil(cjkCount / 450 + wordCount / 200));
+};
 
 const isExternalImage = href => /^(?:[a-z][a-z\d+.-]*:|\/\/|data:|#)/i.test(href) && !/^[a-z]:[\\/]/i.test(href);
 
@@ -82,7 +88,7 @@ async function readPosts() {
     const tags = Array.isArray(data.tags) ? data.tags : data.tags ? [data.tags] : [];
     const categories = Array.isArray(data.categories) ? data.categories : data.categories ? [data.categories] : [];
     const sourcePath = path.join(contentDir, file);
-    posts.push({ title, date: String(date).slice(0, 10), tags, categories, slug: slugify(title), html: renderMarkdown(body, sourcePath), excerpt: body.replace(/[#>*`\[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180) });
+    posts.push({ title, date: String(date).slice(0, 10), tags, categories, slug: slugify(title), readingMinutes: readingMinutes(body), html: renderMarkdown(body, sourcePath), excerpt: body.replace(/[#>*`\[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180) });
   }
   return posts.sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -94,7 +100,9 @@ async function renderTemplate(name, data) {
 
 const dateAnchor = post => `archives.html#date-${slugify(post.date)}`;
 const tagAnchor = tag => `tags.html#tag-${slugify(tag)}`;
-const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><a class="meta-chip meta-date" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a>${post.tags.map(tag => `<a class="meta-chip meta-tag" href="${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('')}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p></article>`;
+const categoryAnchor = category => `categories.html#category-${slugify(category)}`;
+const postCategories = post => post.categories.length ? post.categories : ['未分类'];
+const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><div class="meta-row meta-categories">${postCategories(post).map(category => `<a class="meta-chip meta-category" href="${categoryAnchor(category)}">${escapeHtml(category)}</a>`).join('')}</div>${post.tags.length ? `<div class="meta-row meta-tags">${post.tags.map(tag => `<a class="meta-chip meta-tag" href="${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('')}</div>` : ''}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><div class="post-footer"><a class="meta-chip meta-date" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a><span class="reading-time">阅读时长 · ${post.readingMinutes} 分钟</span></div></article>`;
 
 async function main() {
   if (process.argv.includes('--clean')) { await fs.rm(publicDir, { recursive: true, force: true }); return; }
@@ -110,7 +118,9 @@ async function main() {
   const index = await renderTemplate('index.html', { title: "kafsaki's blog", content: cards, count: posts.length });
   await fs.writeFile(path.join(publicDir, 'index.html'), index);
   for (const post of posts) {
-    const html = await renderTemplate('post.html', { title: escapeHtml(post.title), date: escapeHtml(post.date), tags: post.tags.map(escapeHtml).join(', '), content: post.html });
+    const categories = postCategories(post).map(category => `<a class="meta-chip meta-category" href="../${categoryAnchor(category)}">${escapeHtml(category)}</a>`).join('');
+    const tags = post.tags.map(tag => `<a class="meta-chip meta-tag" href="../${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('');
+    const html = await renderTemplate('post.html', { title: escapeHtml(post.title), date: escapeHtml(post.date), dateAnchor: slugify(post.date), categories, tags, readingTime: `阅读时长 · ${post.readingMinutes} 分钟`, content: post.html });
     await fs.writeFile(path.join(publicDir, 'posts', `${post.slug}.html`), html);
   }
   const archiveGroups = Object.groupBy ? Object.groupBy(posts, post => post.date.slice(0, 7)) : posts.reduce((groups, post) => ((groups[post.date.slice(0, 7)] ??= []).push(post), groups), {});
@@ -138,7 +148,7 @@ async function main() {
       const tagKeys = post.tags.map(tag => slugify(tag)).join(' ');
       return `<a class="category-post-node" href="posts/${post.slug}.html" data-tags="${escapeHtml(tagKeys)}">${escapeHtml(post.title)}</a>`;
     }).join('');
-    return `<section class="category-branch"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(category)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(category)} 标签筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
+    return `<section class="category-branch" id="category-${slugify(category)}"><button class="category-node" type="button" aria-expanded="false"><span class="category-node-marker" aria-hidden="true">+</span><span>${escapeHtml(category)}</span><small>${entries.length} 篇</small></button><div class="category-branch-body" aria-hidden="true"><div class="category-filters" aria-label="${escapeHtml(category)} 标签筛选">${filters}</div><div class="category-post-nodes">${postNodes}</div></div></section>`;
   }).join('');
   await fs.writeFile(path.join(publicDir, 'categories.html'), await renderTemplate('categories.html', { count: posts.length, content: categoryBranches }));
   await fs.writeFile(path.join(publicDir, 'about.html'), await renderTemplate('page.html', { title: '关于', content: '<p>记录技术学习、系统编程与 AI Agent 实践。</p>' }));
