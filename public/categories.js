@@ -1,6 +1,24 @@
 const categoryMap = document.querySelector('#category-map');
 
 if (categoryMap) {
+  const openBranch = branch => {
+    if (!branch) return;
+    branch.classList.add('is-open');
+    branch.querySelector('.category-node').setAttribute('aria-expanded', 'true');
+    branch.querySelector('.category-branch-body').setAttribute('aria-hidden', 'false');
+  };
+
+  const openHashCategory = () => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    const branch = id ? document.getElementById(id) : null;
+    if (!branch || !branch.classList.contains('category-branch')) return;
+    openBranch(branch);
+    requestAnimationFrame(() => branch.scrollIntoView({ block: 'center' }));
+  };
+
+  openHashCategory();
+  window.addEventListener('hashchange', openHashCategory);
+
   categoryMap.addEventListener('click', event => {
     const categoryButton = event.target.closest('.category-node');
     if (categoryButton) {

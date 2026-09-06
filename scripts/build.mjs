@@ -102,7 +102,8 @@ const dateAnchor = post => `archives.html#date-${slugify(post.date)}`;
 const tagAnchor = tag => `tags.html#tag-${slugify(tag)}`;
 const categoryAnchor = category => `categories.html#category-${slugify(category)}`;
 const postCategories = post => post.categories.length ? post.categories : ['未分类'];
-const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><div class="meta-row meta-categories">${postCategories(post).map(category => `<a class="meta-chip meta-category" href="${categoryAnchor(category)}">${escapeHtml(category)}</a>`).join('')}</div>${post.tags.length ? `<div class="meta-row meta-tags">${post.tags.map(tag => `<a class="meta-chip meta-tag" href="${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('')}</div>` : ''}</div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><div class="post-footer"><a class="meta-chip meta-date" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a><span class="reading-time">阅读时长 · ${post.readingMinutes} 分钟</span></div></article>`;
+const tagChips = (tags, prefix = '') => tags.map(tag => `<a class="meta-chip meta-tag" href="${prefix}${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('');
+const postCard = post => `<article class="post-card" data-post-url="posts/${post.slug}.html" tabindex="0"><div class="post-meta"><div class="meta-row meta-categories">${postCategories(post).map(category => `<a class="meta-chip meta-category" href="${categoryAnchor(category)}">${escapeHtml(category)}</a>`).join('')}</div></div><h2><a href="posts/${post.slug}.html">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}${post.excerpt.length >= 180 ? '...' : ''}</p><div class="post-footer"><div class="post-info"><a class="meta-chip meta-date" href="${dateAnchor(post)}"><time datetime="${escapeHtml(post.date)}">${escapeHtml(post.date)}</time></a><span class="reading-time">阅读时长 · ${post.readingMinutes} 分钟</span></div>${post.tags.length ? `<div class="meta-tags-scroll" tabindex="0" aria-label="文章标签，可使用滚轮横向浏览"><div class="meta-row meta-tags">${tagChips(post.tags)}</div></div>` : ''}</div></article>`;
 
 async function main() {
   if (process.argv.includes('--clean')) { await fs.rm(publicDir, { recursive: true, force: true }); return; }
@@ -119,7 +120,7 @@ async function main() {
   await fs.writeFile(path.join(publicDir, 'index.html'), index);
   for (const post of posts) {
     const categories = postCategories(post).map(category => `<a class="meta-chip meta-category" href="../${categoryAnchor(category)}">${escapeHtml(category)}</a>`).join('');
-    const tags = post.tags.map(tag => `<a class="meta-chip meta-tag" href="../${tagAnchor(tag)}">${escapeHtml(tag)}</a>`).join('');
+    const tags = post.tags.length ? `<div class="article-tags-scroll" tabindex="0" aria-label="文章标签，可使用滚轮横向浏览"><div class="meta-row meta-tags">${tagChips(post.tags, '../')}</div></div>` : '';
     const html = await renderTemplate('post.html', { title: escapeHtml(post.title), date: escapeHtml(post.date), dateAnchor: slugify(post.date), categories, tags, readingTime: `阅读时长 · ${post.readingMinutes} 分钟`, content: post.html });
     await fs.writeFile(path.join(publicDir, 'posts', `${post.slug}.html`), html);
   }

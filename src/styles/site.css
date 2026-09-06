@@ -78,3 +78,16 @@
 .article-meta{display:grid;gap:8px;margin-bottom:20px}
 .article-meta .meta-row{min-height:25px}
 .article-meta-bottom{margin-top:2px;padding-top:10px;border-top:1px solid rgba(48,64,82,.65)}
+
+/* Keep post footer metadata in two independent lanes. */
+.post-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,46%);justify-content:normal;gap:14px;align-items:center}
+.post-info{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.meta-chip.meta-date{min-height:auto;padding:0;border:0;border-radius:0;background:transparent;color:var(--accent)}
+.meta-chip.meta-date:hover,.meta-chip.meta-date:focus-visible{border:0;background:transparent;color:var(--text);box-shadow:none;text-decoration:underline}
+.meta-tags-scroll,.article-tags-scroll{min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:rgba(99,179,237,.48) transparent}
+.meta-tags-scroll .meta-tags,.article-tags-scroll .meta-tags{flex-wrap:nowrap;width:max-content}
+.meta-tags-scroll{justify-self:end;max-width:100%}
+.meta-tags-scroll .meta-tags{justify-content:flex-end}
+.article-meta-bottom{display:flex;flex-wrap:nowrap;min-width:0;gap:9px;align-items:center}
+.article-tags-scroll{flex:1}
+@media(max-width:640px){.post-footer{grid-template-columns:minmax(0,1fr) minmax(100px,45%);gap:10px}.article-meta-bottom{gap:7px}.article-tags-scroll{min-width:72px}}
