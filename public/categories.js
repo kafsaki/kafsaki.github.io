@@ -1,6 +1,6 @@
-const categoryMap = document.querySelector('#category-map, #tag-map');
+const categoryMaps = document.querySelectorAll('#category-map, #tag-map, #untagged-map');
 
-if (categoryMap) {
+if (categoryMaps.length) {
   const openBranch = branch => {
     if (!branch) return;
     branch.classList.add('is-open');
@@ -19,7 +19,7 @@ if (categoryMap) {
   openHashCategory();
   window.addEventListener('hashchange', openHashCategory);
 
-  categoryMap.addEventListener('click', event => {
+  categoryMaps.forEach(categoryMap => categoryMap.addEventListener('click', event => {
     const categoryButton = event.target.closest('.category-node');
     if (categoryButton) {
       const branch = categoryButton.closest('.category-branch');
@@ -44,5 +44,5 @@ if (categoryMap) {
       post.classList.toggle('is-highlighted', filter !== 'all' && matches);
       post.classList.toggle('is-muted', filter !== 'all' && !matches);
     });
-  });
+  }));
 }
