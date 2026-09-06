@@ -1,4 +1,4 @@
-const categoryMaps = document.querySelectorAll('#category-map, #tag-map, #untagged-map');
+const categoryMaps = document.querySelectorAll('#category-map, #tag-map, #untagged-map, #uncategorized-map');
 
 if (categoryMaps.length) {
   const openBranch = branch => {
