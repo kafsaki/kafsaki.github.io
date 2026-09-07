@@ -3,10 +3,13 @@
 ## [Unreleased]
 
 ### Added
+- Added build-time syntax highlighting for fenced code blocks via highlight.js, with a language label header on every code block and a dark hljs palette in `site.css`.
+- Added GFM footnote support to the Markdown renderer: `[^id]` references are numbered in order of first use, link to an end-of-article footnote list, and each entry links back to its references.
 - Added a WebGL2 fluid pixel-dot background (`src/scripts/background.js`), ported from `apps/frontend/trae-background-demo` and extended with a persistent velocity field so the current follows the pointer.
 - Added a copy step for `src/scripts/background.js` to the build.
 
 ### Changed
+- Corrected the `marked` dependency range to `^17.0.5` so a fresh install matches the renderer API the build uses.
 - Replaced the flat page background with the animated dot field; header, cards, inputs and the article body are now translucent panels so the flow shows through.
 - Moved the base background colour from `body` to `html` so the fixed background layer paints above it.
 

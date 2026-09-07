@@ -6,7 +6,7 @@
 
 - `content/*.md`：文章源文件。
 - `content/` 下的非 Markdown 文件：文章引用的本地资源，例如 `typora_images/`。
-- `scripts/build.mjs`：Markdown 解析、图片路径转换、资源复制和页面生成逻辑。
+- `scripts/build.mjs`：Markdown 解析（代码块 highlight.js 构建时高亮、语言标签头部、GFM 脚注）、图片路径转换、资源复制和页面生成逻辑。
 - `src/templates/`、`src/styles/`、`src/scripts/`：页面模板、样式和浏览器脚本。
 - `public/`：提交到 Git 的构建产物，也是 GitHub Pages 的发布目录。不要手动编辑其中的 HTML、CSS 或 JavaScript。
 - `.github/workflows/ci.yml`：Pull Request 构建验证。
