@@ -184,8 +184,106 @@ nav {
   border-radius: 8px;
   backdrop-filter: blur(8px);
 }
+/* Prose elements inside article content. */
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  margin: 30px 0 12px;
+  line-height: 1.35;
+}
 .article-content h2 {
   margin-top: 40px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(48, 64, 82, 0.65);
+}
+.article-content p {
+  margin: 14px 0;
+}
+.article-content a {
+  text-decoration: underline;
+  text-decoration-color: rgba(99, 179, 237, 0.45);
+  text-underline-offset: 3px;
+}
+.article-content a:hover {
+  text-decoration-color: var(--accent);
+}
+.article-content ul,
+.article-content ol {
+  margin: 14px 0;
+  padding-left: 26px;
+}
+.article-content li {
+  margin: 5px 0;
+}
+.article-content li > ul,
+.article-content li > ol {
+  margin: 5px 0;
+}
+.article-content li::marker {
+  color: var(--accent);
+}
+.article-content input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0 6px 0 0;
+  vertical-align: -2px;
+  accent-color: var(--accent);
+}
+.article-content blockquote {
+  margin: 18px 0;
+  padding: 10px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  background: rgba(24, 33, 44, 0.5);
+  color: var(--muted);
+}
+.article-content blockquote > :first-child {
+  margin-top: 0;
+}
+.article-content blockquote > :last-child {
+  margin-bottom: 0;
+}
+.article-content hr {
+  margin: 30px 0;
+  border: 0;
+  border-top: 1px solid rgba(48, 64, 82, 0.7);
+}
+/* Cells carry align attributes from marked; CSS intentionally stays out of
+   text alignment so per-column alignment keeps working. */
+.article-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 20px 0;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.article-content th,
+.article-content td {
+  padding: 8px 14px;
+  border: 1px solid rgba(48, 64, 82, 0.85);
+}
+.article-content thead th {
+  background: rgba(24, 33, 44, 0.8);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.article-content tbody tr:nth-child(even) {
+  background: rgba(24, 33, 44, 0.32);
+}
+.article-content tbody tr:hover {
+  background: rgba(99, 179, 237, 0.07);
+}
+.article-content img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.article-content del {
+  color: var(--muted);
 }
 .article-content pre {
   overflow: auto;

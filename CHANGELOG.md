@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- Added prose styles for article content: tables (striped, hoverable, horizontally scrollable), blockquotes, lists with accent markers, task-list checkboxes, horizontal rules, responsive images and heading hierarchy.
+- Added a style-coverage test pinning every element marked can emit to an `.article-content` rule.
 - Added `node:test` regression tests for the Markdown renderer (code highlighting, language labels, footnote edge cases) and wired `npm test` into the CI workflow.
 - Added build-time syntax highlighting for fenced code blocks via highlight.js, with a language label header on every code block and a dark hljs palette in `site.css`.
 - Added GFM footnote support to the Markdown renderer: `[^id]` references are numbered in order of first use, link to an end-of-article footnote list, and each entry links back to its references.
