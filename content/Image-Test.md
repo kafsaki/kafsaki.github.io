@@ -1,1 +1,0 @@
-![image-20260905155512514](D:\DEV\apps\kafsaki-static-v2\content\typora_images\image-20260905155512514.png)

@@ -2,27 +2,26 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-07
+
 ### Added
-- Added GitHub-style emoji shortcodes (`:rocket:`) via a curated dependency-free map in `scripts/emoji-map.mjs`; unknown names stay literal and code spans are unaffected.
-- Added prose styles for article content: tables (striped, hoverable, horizontally scrollable), blockquotes, lists with accent markers, task-list checkboxes, horizontal rules, responsive images and heading hierarchy.
-- Added a style-coverage test pinning every element marked can emit to an `.article-content` rule.
-- Added `node:test` regression tests for the Markdown renderer (code highlighting, language labels, footnote edge cases) and wired `npm test` into the CI workflow.
-- Added build-time syntax highlighting for fenced code blocks via highlight.js, with a language label header on every code block and a dark hljs palette in `site.css`.
-- Added GFM footnote support to the Markdown renderer: `[^id]` references are numbered in order of first use, link to an end-of-article footnote list, and each entry links back to its references.
-- Added a WebGL2 fluid pixel-dot background (`src/scripts/background.js`), ported from `apps/frontend/trae-background-demo` and extended with a persistent velocity field so the current follows the pointer.
-- Added a copy step for `src/scripts/background.js` to the build.
+- Rebuilt the site on VitePress (Vue 3): SPA navigation, a local dev server with hot reload (`npm run dev`), and content-loaded data for archive and taxonomy pages.
+- Added a WebGL2 fluid pixel-dot background that follows the pointer, degrading gracefully without WebGL2.
+- Code blocks are highlighted by Shiki with a language label and a hover copy button; the token palette lives in `--shiki-token-*` CSS variables.
+- GFM footnotes (`[^id]`) and GitHub-style emoji shortcodes (`:rocket:`) via markdown-it plugins.
+- Prose styles for article content: tables (striped, hoverable, horizontally scrollable), blockquotes, lists with accent markers, task-list checkboxes, horizontal rules, responsive images and heading hierarchy.
+- `node:test` suites for the shared text utilities and the renderer, wired into the CI workflow.
 
 ### Changed
-- Split the Markdown pipeline into `scripts/markdown.mjs` and restructured `build.mjs` into per-page builders, removing the duplicated tag/category branch construction.
-- Excerpts and reading time now strip fenced code, footnote definitions and link targets, so Windows image paths no longer leak into post cards.
-- Consolidated duplicated CSS rules (meta chips, article title, post footer, taxonomy nodes) without changing computed styles.
-- Rewrote AGENTS.md as an agent-oriented maintenance handbook and bumped CI to Node 22.
-- Corrected the `marked` dependency range to `^17.0.5` so a fresh install matches the renderer API the build uses.
+- Posts moved from `content/` to `posts/` with file names matching their URL slugs; all existing article and page URLs are unchanged.
+- Images now live in `public/assets/` and are referenced as `/assets/...`; the custom Typora path rewriting was removed.
+- Deployment switched from committing `public/` to a CI build: pushes to `main` run `npm run build` and deploy `.vitepress/dist/` to GitHub Pages.
+- The tag/category taxonomy maps, post cards, search and the WebGL pixel background were re-implemented as Vue components, preserving their look and behavior.
+- Excerpts and reading time strip fenced code, footnote definitions and link targets, so Windows image paths no longer leak into post cards.
 
 ### Removed
-- Removed dead CSS left over from the pre-taxonomy design (`.read-more`, `.tag-section`, `.tag-list`, `.article-meta`).
-- Replaced the flat page background with the animated dot field; header, cards, inputs and the article body are now translucent panels so the flow shows through.
-- Moved the base background colour from `body` to `html` so the fixed background layer paints above it.
+- Removed the hand-written Node.js static generator (`scripts/build.mjs`, `scripts/markdown.mjs`, `scripts/emoji-map.mjs`), the `{{ }}` templates, global DOM scripts and the committed `public/` build output.
+- Removed the direct `highlight.js` dependency in favor of Shiki via VitePress, and the curated emoji map in favor of markdown-it-emoji.
 
 ## [2.0.0] - 2026-09-04
 

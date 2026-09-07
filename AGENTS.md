@@ -4,80 +4,77 @@
 
 ## 项目速览
 
-- kafsaki 的个人博客：Node.js 脚本把 `content/*.md` 构建为纯静态站点，输出到 `public/`。
-- 依赖仅 `marked`（Markdown 解析）与 `highlight.js`（构建时代码高亮）；测试使用 Node 内置 `node:test`，无其他工具链。
-- 运行环境：Node ≥ 20（CI 用 22）。推送 `main` 且 `public/` 有变更时，GitHub Pages 自动部署。
+- kafsaki 的个人博客：**VitePress（Vue 3）静态站点**，文章在 `posts/*.md`，构建产物 `.vitepress/dist/` 不入库。
+- 推送 `main` 后 GitHub Actions 自动构建并部署到 GitHub Pages（`pages.yml`）；PR 由 `ci.yml` 跑 `npm test` + 构建。
+- 运行环境：Node ≥ 20（CI 用 22）。
 
 ## 硬规则
 
-1. **绝不手改 `public/`**：它是构建产物兼发布目录，只能由 `npm run build` 生成。
-2. **`public/` 必须与源码同一次提交**：只推源码会让线上发布旧页面。
-3. **不改已发布文章的 `title`**：title 决定 slug 与 URL（`public/posts/<slug>.html`）。
-4. 提交身份固定为 `kafsaki <kafsaki.moe@outlook.com>`；仓库已做 local 配置，只验证不修改。
-5. 保留用户的无关改动，不重写 Git 历史。
+1. **产物不入库**：`.vitepress/dist/`、`.vitepress/cache/`、`node_modules/` 永不提交。`public/` 只放静态资产（原样复制到 dist 根），不是构建产物目录。
+2. **文件名即 URL**：`posts/<name>.md` → `/posts/<name>.html`。不改已发布文章的文件名。
+3. 提交身份固定为 `kafsaki <kafsaki.moe@outlook.com>`；仓库已做 local 配置，只验证不修改。
+4. 保留用户的无关改动，不重写 Git 历史。
 
 ## 命令
 
 | 命令 | 用途 |
 | --- | --- |
-| `npm run build` | 全量重建 `public/`（先删后建，幂等） |
-| `npm test` | 运行 `tests/*.test.mjs` 渲染回归测试 |
-| `node --check scripts/*.mjs` | 最快语法反馈 |
+| `npm run dev` | 本地开发服务器（热更新） |
+| `npm run build` | 构建到 `.vitepress/dist/`（含死链检查） |
+| `npm run preview` | 预览构建产物 |
+| `npm test` | `tests/*.test.mjs`（node:test，无额外依赖） |
 
 ## 结构与职责
 
 | 路径 | 职责 |
 | --- | --- |
-| `content/*.md` | 文章。front matter：`title/date/tags/categories`，可省略（title=文件名，date=构建当天） |
-| `content/` 下其他文件 | 文章资源（如 `typora_images/`），构建时复制到 `public/assets/` 并把文章内引用改写为 `../assets/...` |
-| `scripts/build.mjs` | 站点组装：读文章，生成首页/文章页/归档/标签/分类/关于页。入口有守卫，可被测试安全 import |
-| `scripts/markdown.mjs` | Markdown→HTML 渲染管线：hljs 高亮、GFM 脚注、本地图片解析。纯函数无 IO |
-| `src/templates/*.html` | 页面骨架，`{{ key }}` 占位符由 build.mjs 替换 |
-| `src/styles/site.css` | 全站唯一样式表，原样复制 |
-| `src/scripts/*.js` | 浏览器脚本，原样复制 |
-| `tests/*.test.mjs` | 渲染层回归测试（高亮、语言标签、脚注边界、图片路径、plainText） |
-| `.github/workflows/` | `ci.yml`：PR 时 `npm test` + `npm run build`；`pages.yml`：推送后部署 `public/` |
+| `posts/*.md` | 文章。front matter：`title/date/tags/categories`；title 缺省用文件名，date 缺省显示为空 |
+| `index.md`、`archives.md`、`tags.md`、`categories.md`、`about.md` | 站点页面；`index.md` 用 `layout: home`，其余带 `kicker/lead`（+ `wide: true` 宽版式） |
+| `public/assets/` | 静态资产（如 `typora_images/`），文章用 `/assets/...` 引用 |
+| `.vitepress/config.mts` | 站点配置：语言、Shiki（css-variables 主题）、markdown-it-footnote/emoji 插件 |
+| `.vitepress/data/posts.data.ts` | 文章数据加载器：归一化字段 + 摘要（前 180 字符）+ 阅读时长 |
+| `.vitepress/theme/Layout.vue` | 三种外壳：home / 文章页（`posts/` 路径）/ 普通页面 |
+| `.vitepress/theme/components/` | HomePage、PostCard、ArchivesPage、TaxonomyMap(+Branch)、ArticleMeta、BgPixels |
+| `.vitepress/theme/bg/engine.js` | WebGL 点阵背景引擎；`initBackground(canvas)` 返回清理函数 |
+| `.vitepress/theme/custom.css` | 全站样式；语法着色由 `--shiki-token-*` 变量控制 |
+| `scripts/utils.mjs` | slugify / stripFrontMatter / plainText / readingMinutes（loader 与测试共用） |
+| `tests/*.test.mjs` | 工具函数回归测试 |
 
-## 渲染管线要点（改 markdown.mjs 前必读）
+## 渲染与交互要点
 
-- 使用 marked 17 对象式 renderer API；`createMarkdownRenderer(contentDir)` 返回 `renderMarkdown(body, sourceFile)`。
-- 代码块一律输出 `<figure class="code-block">`，头部显示语言标签；无语言显示 `text`；hljs 失败回退为纯转义文本。
-- 脚注 `[^id]` 为本地自定义扩展：lex 阶段收集定义，编号按**首次引用顺序**；未定义引用原样输出；同一脚注重复引用生成 `fnref-N-k` 并各自回链；文末输出 `<section class="footnotes">`。
-- emoji 短代码 `:name:` 由行内扩展查 `scripts/emoji-map.mjs`（内置精选表，无依赖）；未知名称保持字面；扩充时直接往表里加条目。
-- **陷阱**：marked 的段落 tokenizer 会吞掉没有空行分隔的脚注定义行，当前由 parse 前的预处理补空行解决。改动 tokenizer 前先读懂这段预处理。
-- 图片只处理 `content/` 内的引用（含 Typora 的 Windows 绝对路径），目录外路径原样保留。
+- 代码块：Shiki 高亮，VitePress 默认输出语言标签与复制按钮；配色在 custom.css 的 `--shiki-token-*`，改 config 的 `markdown.theme` 必须同步改 CSS。
+- 脚注与 emoji 由 markdown-it 插件处理；脚注 CSS 适配其输出类名（`.footnotes`、`.footnote-ref`、`.footnote-backref`、隐藏的 `hr.footnotes-sep`）。
+- `TaxonomyMap` 用 `mode="tags"|"categories"` 复用同一组件；展开/筛选状态在组件内；hash 深链接（`#tag-x` / `#category-x`）自动展开定位。
+- 卡片点击跳转、标签横向滚动、`/` 聚焦搜索均为组件内 Vue 事件，无全局 DOM 脚本。
 
 ## 工作流
 
 ### 只改文章
 
 ```bash
-npm run build
-git add content public
+git add posts public
 git commit -m "content: ..."
 git push origin main
 ```
 
-不需要跑测试，也不需要读构建源码。
+本地可 `npm run dev` 预览；不需要跑测试。
 
-### 改构建器、模板、样式、浏览器脚本、测试或工作流
+### 改主题、组件、配置、工具或工作流
 
 ```bash
-node --check scripts/build.mjs scripts/markdown.mjs
 npm test
-npm run build
-git status --short public/   # 差异必须全部是本次改动的预期结果
+npm run build   # 必须通过；死链检查会暴露问题链接
+git status --short
 ```
 
-源码、`public/`、CHANGELOG 在同一次提交。只有依赖变更才修改 `package.json`，并 `npm install` 刷新 lock。
+全部变更一次提交。依赖变更才修改 `package.json`，并 `npm install` 刷新 lock。
 
 ### 删 CSS 类或改选择器
 
-类名可能被 JS 动态切换（`is-open` / `is-active` / `is-highlighted` / `is-muted`）或由 build.mjs 在生成 HTML 时输出。删除前必须在 `src/`、`public/`、`scripts/*.mjs` 中全局确认无引用。
+类名可能被组件动态绑定（`is-open` / `is-active` / `is-highlighted` / `is-muted` / `copied`）或由 VitePress/插件输出（`language-*`、`lang`、`copy`、`.footnotes`）。删除前必须在 `.vitepress/`、`posts/` 全局确认无引用。
 
 ## 提交前检查
 
 1. `git diff --check` 通过。
-2. 涉及构建逻辑时 `npm test` 全绿。
-3. `public/` 与源码同步，差异均为预期。
-4. CHANGELOG 的 `[Unreleased]` 已按 Added / Changed / Removed 记录（纯文章发布不记）。
+2. 涉及构建逻辑时 `npm test` 全绿、`npm run build` 成功。
+3. CHANGELOG 的 `[Unreleased]` 已按 Added / Changed / Removed 记录（纯文章发布不记）。

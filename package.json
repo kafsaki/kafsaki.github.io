@@ -1,14 +1,21 @@
 {
   "name": "kafsaki-personal-site",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
     "test": "node --test"
   },
-  "dependencies": {
-    "highlight.js": "^11.11.1",
-    "marked": "^17.0.5"
+  "devDependencies": {
+    "markdown-it-emoji": "^3.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "vitepress": "^1.6.3",
+    "vue": "^3.5.13"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
   }
 }
