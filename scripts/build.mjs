@@ -692,7 +692,14 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Run the build only when executed directly, not when imported by tests.
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+)
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+
+export { renderMarkdown };

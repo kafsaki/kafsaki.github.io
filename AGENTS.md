@@ -7,6 +7,7 @@
 - `content/*.md`：文章源文件。
 - `content/` 下的非 Markdown 文件：文章引用的本地资源，例如 `typora_images/`。
 - `scripts/build.mjs`：Markdown 解析（代码块 highlight.js 构建时高亮、语言标签头部、GFM 脚注）、图片路径转换、资源复制和页面生成逻辑。
+- `tests/`：渲染逻辑的回归测试，使用 Node 内置 `node:test`，无额外依赖；`npm test` 运行。
 - `src/templates/`、`src/styles/`、`src/scripts/`：页面模板、样式和浏览器脚本。
 - `public/`：提交到 Git 的构建产物，也是 GitHub Pages 的发布目录。不要手动编辑其中的 HTML、CSS 或 JavaScript。
 - `.github/workflows/ci.yml`：Pull Request 构建验证。
@@ -26,7 +27,7 @@ git commit -m "content: publish new article"
 git push origin main
 ```
 
-修改构建器、模板、样式、脚本或工作流时，除上述检查外，再运行 `node --check scripts/build.mjs`，并检查对应的生成差异。只有涉及依赖时才需要重新安装依赖；常规文章更新不需要修改 `package.json`。
+修改构建器、模板、样式、脚本或工作流时，除上述检查外，再运行 `node --check scripts/build.mjs` 和 `npm test`，并检查对应的生成差异。只有涉及依赖时才需要重新安装依赖；常规文章更新不需要修改 `package.json`。
 
 `npm run clean` 会删除整个 `public/`，只在明确需要清理构建产物时使用。当前 `npm run dev` 只是把 `--watch` 参数传给构建脚本，脚本尚未实现监听，因此实际只执行一次构建；项目没有单独的开发服务器。
 

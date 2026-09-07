@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added `node:test` regression tests for the Markdown renderer (code highlighting, language labels, footnote edge cases) and wired `npm test` into the CI workflow.
 - Added build-time syntax highlighting for fenced code blocks via highlight.js, with a language label header on every code block and a dark hljs palette in `site.css`.
 - Added GFM footnote support to the Markdown renderer: `[^id]` references are numbered in order of first use, link to an end-of-article footnote list, and each entry links back to its references.
 - Added a WebGL2 fluid pixel-dot background (`src/scripts/background.js`), ported from `apps/frontend/trae-background-demo` and extended with a persistent velocity field so the current follows the pointer.
