@@ -1,61 +1,82 @@
-# kafsaki.github.io 项目规则
+# AGENTS.md
 
-这是一个基于 Node.js 和 `marked` 的轻量 Markdown 静态站点生成器。源码和文章位于仓库中，GitHub Pages 直接发布已生成的 `public/`。
+面向 agent 的仓库维护手册。先读「硬规则」，再按任务类型走「工作流」。
 
-## 目录职责
+## 项目速览
 
-- `content/*.md`：文章源文件。
-- `content/` 下的非 Markdown 文件：文章引用的本地资源，例如 `typora_images/`。
-- `scripts/build.mjs`：Markdown 解析（代码块 highlight.js 构建时高亮、语言标签头部、GFM 脚注）、图片路径转换、资源复制和页面生成逻辑。
-- `tests/`：渲染逻辑的回归测试，使用 Node 内置 `node:test`，无额外依赖；`npm test` 运行。
-- `src/templates/`、`src/styles/`、`src/scripts/`：页面模板、样式和浏览器脚本。
-- `public/`：提交到 Git 的构建产物，也是 GitHub Pages 的发布目录。不要手动编辑其中的 HTML、CSS 或 JavaScript。
-- `.github/workflows/ci.yml`：Pull Request 构建验证。
-- `.github/workflows/pages.yml`：推送 `main` 后上传 `public/` 并部署 GitHub Pages。
+- kafsaki 的个人博客：Node.js 脚本把 `content/*.md` 构建为纯静态站点，输出到 `public/`。
+- 依赖仅 `marked`（Markdown 解析）与 `highlight.js`（构建时代码高亮）；测试使用 Node 内置 `node:test`，无其他工具链。
+- 运行环境：Node ≥ 20（CI 用 22）。推送 `main` 且 `public/` 有变更时，GitHub Pages 自动部署。
 
-## 常用流程
+## 硬规则
 
-先用 `git status --short` 确认工作区，再按变更范围读取文件。仅修改文章时，不必重复检查完整 Git 历史、全部源码或工作流；修改构建器、模板、资源处理或部署配置时，再读取对应文件并扩大验证范围。保留用户已有的无关改动，不做历史重写。
+1. **绝不手改 `public/`**：它是构建产物兼发布目录，只能由 `npm run build` 生成。
+2. **`public/` 必须与源码同一次提交**：只推源码会让线上发布旧页面。
+3. **不改已发布文章的 `title`**：title 决定 slug 与 URL（`public/posts/<slug>.html`）。
+4. 提交身份固定为 `kafsaki <kafsaki.moe@outlook.com>`；仓库已做 local 配置，只验证不修改。
+5. 保留用户的无关改动，不重写 Git 历史。
 
-新增或修改文章时：
+## 命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `npm run build` | 全量重建 `public/`（先删后建，幂等） |
+| `npm test` | 运行 `tests/*.test.mjs` 渲染回归测试 |
+| `node --check scripts/*.mjs` | 最快语法反馈 |
+
+## 结构与职责
+
+| 路径 | 职责 |
+| --- | --- |
+| `content/*.md` | 文章。front matter：`title/date/tags/categories`，可省略（title=文件名，date=构建当天） |
+| `content/` 下其他文件 | 文章资源（如 `typora_images/`），构建时复制到 `public/assets/` 并把文章内引用改写为 `../assets/...` |
+| `scripts/build.mjs` | 站点组装：读文章，生成首页/文章页/归档/标签/分类/关于页。入口有守卫，可被测试安全 import |
+| `scripts/markdown.mjs` | Markdown→HTML 渲染管线：hljs 高亮、GFM 脚注、本地图片解析。纯函数无 IO |
+| `src/templates/*.html` | 页面骨架，`{{ key }}` 占位符由 build.mjs 替换 |
+| `src/styles/site.css` | 全站唯一样式表，原样复制 |
+| `src/scripts/*.js` | 浏览器脚本，原样复制 |
+| `tests/*.test.mjs` | 渲染层回归测试（高亮、语言标签、脚注边界、图片路径、plainText） |
+| `.github/workflows/` | `ci.yml`：PR 时 `npm test` + `npm run build`；`pages.yml`：推送后部署 `public/` |
+
+## 渲染管线要点（改 markdown.mjs 前必读）
+
+- 使用 marked 17 对象式 renderer API；`createMarkdownRenderer(contentDir)` 返回 `renderMarkdown(body, sourceFile)`。
+- 代码块一律输出 `<figure class="code-block">`，头部显示语言标签；无语言显示 `text`；hljs 失败回退为纯转义文本。
+- 脚注 `[^id]` 为本地自定义扩展：lex 阶段收集定义，编号按**首次引用顺序**；未定义引用原样输出；同一脚注重复引用生成 `fnref-N-k` 并各自回链；文末输出 `<section class="footnotes">`。
+- **陷阱**：marked 的段落 tokenizer 会吞掉没有空行分隔的脚注定义行，当前由 parse 前的预处理补空行解决。改动 tokenizer 前先读懂这段预处理。
+- 图片只处理 `content/` 内的引用（含 Typora 的 Windows 绝对路径），目录外路径原样保留。
+
+## 工作流
+
+### 只改文章
 
 ```bash
 npm run build
-git diff --check
 git add content public
-git commit -m "content: publish new article"
+git commit -m "content: ..."
 git push origin main
 ```
 
-修改构建器、模板、样式、脚本或工作流时，除上述检查外，再运行 `node --check scripts/build.mjs` 和 `npm test`，并检查对应的生成差异。只有涉及依赖时才需要重新安装依赖；常规文章更新不需要修改 `package.json`。
+不需要跑测试，也不需要读构建源码。
 
-`npm run clean` 会删除整个 `public/`，只在明确需要清理构建产物时使用。当前 `npm run dev` 只是把 `--watch` 参数传给构建脚本，脚本尚未实现监听，因此实际只执行一次构建；项目没有单独的开发服务器。
+### 改构建器、模板、样式、浏览器脚本、测试或工作流
 
-## 文章约定
-
-Front matter 可以省略。省略时，标题使用文件名，日期使用构建当天日期，标签和分类为空。正式文章应填写稳定的 `title`、`date` 和 `tags`；`categories` 字段保留供未来分类页面使用。
-
-推荐格式：
-
-```yaml
----
-title: 文章标题
-date: 2026-09-06
-tags: [tag-a, tag-b]
-categories: [category]
----
+```bash
+node --check scripts/build.mjs scripts/markdown.mjs
+npm test
+npm run build
+git status --short public/   # 差异必须全部是本次改动的预期结果
 ```
 
-文章标题会生成 slug，并决定 `public/posts/<slug>.html` 的文件名和链接。修改标题会改变 URL；除非有意变更地址，否则不要随意修改已发布文章的标题。
+源码、`public/`、CHANGELOG 在同一次提交。只有依赖变更才修改 `package.json`，并 `npm install` 刷新 lock。
 
-Typora 本地图片可以使用 `./typora_images/file.png` 或 Windows 绝对路径。构建器会将 `content/` 下的非 Markdown 文件复制到 `public/assets/`，并把文章页中的引用转换为 `../assets/...`。图片必须位于 `content/` 目录内，仓库外的本地路径不会被复制。
+### 删 CSS 类或改选择器
 
-## Git 约定
+类名可能被 JS 动态切换（`is-open` / `is-active` / `is-highlighted` / `is-muted`）或由 build.mjs 在生成 HTML 时输出。删除前必须在 `src/`、`public/`、`scripts/*.mjs` 中全局确认无引用。
 
-提交身份统一使用：
+## 提交前检查
 
-```text
-kafsaki <kafsaki.moe@outlook.com>
-```
-
-提交前只需确认 `git config --local --get user.name` 和 `git config --local --get user.email`；不要为普通提交重复检查全局配置或完整历史。生成的 `public/` 必须和源码变更一起提交，避免远程部署发布旧页面。
+1. `git diff --check` 通过。
+2. 涉及构建逻辑时 `npm test` 全绿。
+3. `public/` 与源码同步，差异均为预期。
+4. CHANGELOG 的 `[Unreleased]` 已按 Added / Changed / Removed 记录（纯文章发布不记）。

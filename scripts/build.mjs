@@ -1,8 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Marked } from "marked";
-import hljs from "highlight.js/lib/common";
+import { createMarkdownRenderer, escapeHtml } from "./markdown.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentDir = path.join(root, "content");
@@ -12,203 +11,69 @@ const stylesDir = path.join(root, "src", "styles");
 const scriptsDir = path.join(root, "src", "scripts");
 const assetsDir = path.join(publicDir, "assets");
 
-const escapeHtml = (value) =>
-  String(value).replace(
-    /[&<>"']/g,
-    (char) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        char
-      ],
-  );
+// Static files copied verbatim into public/: [source directory, file name].
+const STATIC_FILES = [
+  [stylesDir, "site.css"],
+  [scriptsDir, "background.js"],
+  [scriptsDir, "interactions.js"],
+  [scriptsDir, "taxonomy.js"],
+];
+
+const renderMarkdown = createMarkdownRenderer(contentDir);
+
 const slugify = (value) =>
   String(value)
     .toLowerCase()
     .trim()
     .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
     .replace(/^-|-$/g, "");
-const readingMinutes = (body) => {
-  const plain = body
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/[#>*`\[\]()_~]/g, " ")
+
+// Insertion-ordered grouping, so the build does not depend on Object.groupBy.
+const groupBy = (items, key) => {
+  const groups = new Map();
+  for (const item of items) {
+    const groupKey = key(item);
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(item);
+  }
+  return [...groups.entries()];
+};
+
+// Footnote definitions, including their indented continuation lines.
+const stripFootnoteDefinitions = (body) => {
+  const kept = [];
+  let inDefinition = false;
+  for (const line of body.split("\n")) {
+    if (/^ {0,3}\[\^[^\]\n]+\]:/.test(line)) {
+      inDefinition = true;
+      continue;
+    }
+    if (inDefinition) {
+      if (!line.trim() || /^(?: {2,}|\t)/.test(line)) continue;
+      inDefinition = false;
+    }
+    kept.push(line);
+  }
+  return kept.join("\n");
+};
+
+// plainText powers reading time and excerpts: fenced code, footnotes and link
+// targets would otherwise leak into card text and word counts.
+const plainText = (body) =>
+  stripFootnoteDefinitions(body)
+    .replace(/```[\s\S]*?(?:```|$)/g, " ")
+    .replace(/\[\^[^\]\n]+\]/g, " ")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#>*`\[\]()_~]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  const cjkCount = (plain.match(/[\u3400-\u9fff]/g) || []).length;
-  const wordCount = (plain.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) || [])
+
+const readingMinutes = (body) => {
+  const plain = plainText(body);
+  const cjkCount = (plain.match(/[㐀-鿿]/g) || []).length;  const wordCount = (plain.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) || [])
     .length;
   return Math.max(1, Math.ceil(cjkCount / 450 + wordCount / 200));
 };
-
-const isExternalImage = (href) =>
-  /^(?:[a-z][a-z\d+.-]*:|\/\/|data:|#)/i.test(href) &&
-  !/^[a-z]:[\\/]/i.test(href);
-
-function resolveImageSource(href, sourceFile) {
-  const rawHref = String(href || "").trim();
-  if (!rawHref || isExternalImage(rawHref)) return rawHref;
-
-  const normalizedHref = rawHref.replace(/\\/g, "/");
-  const sourceRoot = path.resolve(contentDir);
-  const sourceDir = path.dirname(sourceFile);
-  const absoluteSource = /^[a-z]:\//i.test(normalizedHref)
-    ? path.win32.normalize(normalizedHref)
-    : path.resolve(sourceDir, normalizedHref);
-  const relativeAsset = path.relative(sourceRoot, absoluteSource);
-  if (
-    !relativeAsset ||
-    relativeAsset.startsWith("..") ||
-    path.isAbsolute(relativeAsset)
-  )
-    return rawHref;
-
-  const assetUrl = `../assets/${relativeAsset.split(path.sep).join("/")}`;
-  return encodeURI(assetUrl);
-}
-
-// Code blocks are highlighted at build time so pages ship static markup.
-// Every block gets a header with its language label; unlabeled fences show "text".
-function renderCodeBlock({ text, lang }) {
-  const language = (lang || "").trim().split(/\s+/)[0].toLowerCase();
-  const supported = language && hljs.getLanguage(language);
-  let code;
-  try {
-    code = supported
-      ? hljs.highlight(text, { language }).value
-      : escapeHtml(text);
-  } catch {
-    code = escapeHtml(text);
-  }
-  return `<figure class="code-block">
-  <figcaption class="code-block-header">
-    <span class="code-block-lang">${escapeHtml(language || "text")}</span>
-  </figcaption>
-  <pre><code class="hljs${supported ? ` language-${language}` : ""}">${code}</code></pre>
-</figure>`;
-}
-
-// Footnote ids become HTML anchors; keep them safe for href and CSS use.
-const footnoteAnchor = (id) =>
-  String(id)
-    .trim()
-    .toLowerCase()
-    .replace(/[^\p{Letter}\p{Number}-]+/gu, "-")
-    .replace(/^-+|-+$/g, "") || "note";
-
-// GFM footnotes, kept local so the generator needs no extra plugins:
-// definitions are collected while lexing, references are numbered in order
-// of first use, and the list is appended after the article body.
-function createFootnoteSupport(state) {
-  const footnoteDef = {
-    name: "footnoteDef",
-    level: "block",
-    start(src) {
-      return src.match(/^ {0,3}\[\^[^\]\n]+\]:/m)?.index;
-    },
-    tokenizer(src) {
-      const match = /^ {0,3}\[\^([^\]\n]+)\]:[ \t]*(.*?)(?:\n|$)/.exec(src);
-      if (!match) return;
-      let raw = match[0];
-      const lines = [match[2]];
-      let rest = src.slice(raw.length);
-      let blanks = "";
-      // Continuation lines indented like list items belong to the definition.
-      while (rest) {
-        const eol = rest.indexOf("\n");
-        const line = eol === -1 ? rest : rest.slice(0, eol + 1);
-        if (!line.trim()) {
-          blanks += line;
-          rest = rest.slice(line.length);
-          continue;
-        }
-        if (!/^(?: {2,}|\t)/.test(line)) break;
-        raw += blanks + line;
-        lines.push(
-          (blanks ? "\n" : "") + line.replace(/^(?: {1,4}|\t)/, "").trimEnd(),
-        );
-        blanks = "";
-        rest = rest.slice(line.length);
-      }
-      const anchor = footnoteAnchor(match[1]);
-      if (!state.defs.has(anchor))
-        state.defs.set(anchor, lines.join("\n").trim());
-      return { type: "footnoteDef", raw };
-    },
-    renderer() {
-      return "";
-    },
-  };
-  const footnoteRef = {
-    name: "footnoteRef",
-    level: "inline",
-    start(src) {
-      return src.match(/\[\^/)?.index;
-    },
-    tokenizer(src) {
-      const match = /^\[\^([^\]\n]+)\]/.exec(src);
-      if (!match) return;
-      return { type: "footnoteRef", raw: match[0], id: match[1].trim() };
-    },
-    renderer(token) {
-      const anchor = footnoteAnchor(token.id);
-      if (!state.defs.has(anchor)) return escapeHtml(token.raw);
-      let index = state.order.indexOf(anchor);
-      if (index === -1) {
-        state.order.push(anchor);
-        index = state.order.length - 1;
-      }
-      const count = (state.refs.get(anchor) || 0) + 1;
-      state.refs.set(anchor, count);
-      const refId =
-        count === 1 ? `fnref-${anchor}` : `fnref-${anchor}-${count}`;
-      return `<sup class="footnote-ref" id="${refId}"><a href="#fn-${anchor}">${index + 1}</a></sup>`;
-    },
-  };
-  return [footnoteDef, footnoteRef];
-}
-
-function renderFootnotes(state, md) {
-  if (!state.order.length) return "";
-  const items = [...state.order]
-    .map((anchor, index) => {
-      const content = md.parseInline(state.defs.get(anchor) ?? "");
-      const total = state.refs.get(anchor) || 1;
-      const backlinks = Array.from({ length: total }, (_, k) => {
-        const target =
-          k === 0 ? `fnref-${anchor}` : `fnref-${anchor}-${k + 1}`;
-        return `<a href="#${target}" class="footnote-backref" aria-label="返回正文中第 ${index + 1} 条脚注的引用位置">↩</a>`;
-      }).join("");
-      return `<li id="fn-${anchor}" class="footnote-item">${content}${backlinks}</li>`;
-    })
-    .join("\n");
-  return `<section class="footnotes" role="doc-endnotes" aria-label="脚注">
-<ol class="footnotes-list">
-${items}
-</ol>
-</section>`;
-}
-
-function renderMarkdown(body, sourceFile) {
-  const md = new Marked();
-  const state = { defs: new Map(), order: [], refs: new Map() };
-  md.use(
-    {
-      renderer: {
-        image({ href, title, text }) {
-          const src = resolveImageSource(href, sourceFile);
-          const titleAttribute = title ? ` title="${escapeHtml(title)}"` : "";
-          return `<img src="${escapeHtml(src)}" alt="${escapeHtml(text || "")}"${titleAttribute}>`;
-        },
-        code: renderCodeBlock,
-      },
-    },
-    { extensions: createFootnoteSupport(state) },
-  );
-  // A definition directly below a paragraph line would be swallowed by the
-  // paragraph tokenizer, so give it the blank line Markdown expects.
-  const normalized = body
-    .replace(/\r\n?/g, "\n")
-    .replace(/([^\n])\n( {0,3}\[\^[^\]\n]+\]:)/g, "$1\n\n$2");
-  return md.parse(normalized) + renderFootnotes(state, md);
-}
 
 async function copyContentAssets(sourceDir, targetDir) {
   await fs.mkdir(targetDir, { recursive: true });
@@ -243,6 +108,9 @@ function parseFrontMatter(raw) {
   return { data, body: match[2] };
 }
 
+const asList = (value) =>
+  Array.isArray(value) ? value : value ? [value] : [];
+
 async function readPosts() {
   const files = (await fs.readdir(contentDir)).filter((file) =>
     file.endsWith(".md"),
@@ -252,31 +120,19 @@ async function readPosts() {
     const raw = await fs.readFile(path.join(contentDir, file), "utf8");
     const { data, body } = parseFrontMatter(raw);
     const title = data.title || file.replace(/\.md$/, "");
-    const date = data.date || new Date().toISOString().slice(0, 10);
-    const tags = Array.isArray(data.tags)
-      ? data.tags
-      : data.tags
-        ? [data.tags]
-        : [];
-    const categories = Array.isArray(data.categories)
-      ? data.categories
-      : data.categories
-        ? [data.categories]
-        : [];
     const sourcePath = path.join(contentDir, file);
     posts.push({
       title,
-      date: String(date).slice(0, 10),
-      tags,
-      categories,
+      date: String(data.date || new Date().toISOString().slice(0, 10)).slice(
+        0,
+        10,
+      ),
+      tags: asList(data.tags),
+      categories: asList(data.categories),
       slug: slugify(title),
       readingMinutes: readingMinutes(body),
       html: renderMarkdown(body, sourcePath),
-      excerpt: body
-        .replace(/[#>*`\[\]]/g, "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 180),
+      excerpt: plainText(body).slice(0, 180),
     });
   }
   return posts.sort((a, b) => b.date.localeCompare(a.date));
@@ -375,38 +231,73 @@ const taxonomyBranch = ({
     </div>
   </section>`;
 
-async function main() {
-  if (process.argv.includes("--clean")) {
-    await fs.rm(publicDir, { recursive: true, force: true });
-    return;
-  }
-  const posts = await readPosts();
+// A tag branch lists its posts and offers category filters within the tag.
+const buildTagBranch = (tag, entries) => {
+  const categoryFilters = [...new Set(entries.flatMap(postCategories))].sort(
+    (a, b) => a.localeCompare(b, "zh-CN"),
+  );
+  const filters = [
+    taxonomyFilter("全部分类", "all", true),
+    ...categoryFilters.map((category) =>
+      taxonomyFilter(category, slugify(category)),
+    ),
+  ].join("");
+  const postNodes = entries
+    .map((post) =>
+      taxonomyPostNode(post, postCategories(post).map(slugify).join(" ")),
+    )
+    .join("");
+  return taxonomyBranch({
+    id: `tag-${slugify(tag)}`,
+    label: escapeHtml(tag),
+    count: entries.length,
+    filters,
+    filterLabel: `${tag} 分类筛选`,
+    posts: postNodes,
+    extraClass: "tag-branch",
+  });
+};
+
+// A category branch lists its posts and offers tag filters within the category.
+const buildCategoryBranch = (category, entries) => {
+  const tagFilters = [...new Set(entries.flatMap((post) => post.tags))].sort();
+  const filters = [
+    taxonomyFilter("全部标签", "all", true),
+    ...tagFilters.map((tag) => taxonomyFilter(tag, slugify(tag))),
+  ].join("");
+  const postNodes = entries
+    .map((post) =>
+      taxonomyPostNode(post, post.tags.map(slugify).join(" ")),
+    )
+    .join("");
+  return taxonomyBranch({
+    id: `category-${slugify(category)}`,
+    label: escapeHtml(category),
+    count: entries.length,
+    filters,
+    filterLabel: `${category} 标签筛选`,
+    posts: postNodes,
+  });
+};
+
+async function preparePublicDir() {
   await fs.rm(publicDir, { recursive: true, force: true });
   await fs.mkdir(path.join(publicDir, "posts"), { recursive: true });
   await copyContentAssets(contentDir, assetsDir);
-  await fs.copyFile(
-    path.join(stylesDir, "site.css"),
-    path.join(publicDir, "site.css"),
-  );
-  await fs.copyFile(
-    path.join(scriptsDir, "background.js"),
-    path.join(publicDir, "background.js"),
-  );
-  await fs.copyFile(
-    path.join(scriptsDir, "interactions.js"),
-    path.join(publicDir, "interactions.js"),
-  );
-  await fs.copyFile(
-    path.join(scriptsDir, "taxonomy.js"),
-    path.join(publicDir, "taxonomy.js"),
-  );
-  const cards = posts.map(postCard).join("\n");
+  for (const [dir, file] of STATIC_FILES)
+    await fs.copyFile(path.join(dir, file), path.join(publicDir, file));
+}
+
+async function buildIndex(posts) {
   const index = await renderTemplate("index.html", {
     title: "kafsaki's blog",
-    content: cards,
+    content: posts.map(postCard).join("\n"),
     count: posts.length,
   });
   await fs.writeFile(path.join(publicDir, "index.html"), index);
+}
+
+async function buildPostPages(posts) {
   for (const post of posts) {
     const categories = postCategories(post)
       .map(
@@ -435,24 +326,13 @@ async function main() {
       html,
     );
   }
-  const archiveGroups = Object.groupBy
-    ? Object.groupBy(posts, (post) => post.date.slice(0, 7))
-    : posts.reduce(
-        (groups, post) => (
-          (groups[post.date.slice(0, 7)] ??= []).push(post),
-          groups
-        ),
-        {},
-      );
-  const archive = Object.entries(archiveGroups)
+}
+
+async function buildArchivesPage(posts) {
+  const archiveGroups = groupBy(posts, (post) => post.date.slice(0, 7));
+  const archive = archiveGroups
     .map(([month, entries]) => {
-      const dates = Object.groupBy
-        ? Object.groupBy(entries, (post) => post.date)
-        : entries.reduce(
-            (groups, post) => ((groups[post.date] ??= []).push(post), groups),
-            {},
-          );
-      const dateSections = Object.entries(dates)
+      const dateSections = groupBy(entries, (post) => post.date)
         .map(
           ([date, dateEntries]) =>
             `<section class="archive-date" id="date-${slugify(date)}">
@@ -467,7 +347,7 @@ async function main() {
       </section>`;
     })
     .join("");
-  const archiveTimelineGroups = Object.entries(archiveGroups)
+  const archiveTimelineGroups = archiveGroups
     .map(([month, entries]) => {
       const dates = [...new Set(entries.map((post) => post.date))];
       const links = dates
@@ -502,96 +382,40 @@ async function main() {
       sidebar: archiveTimeline,
     }),
   );
+}
+
+async function buildTagsPage(posts) {
   const tags = [...new Set(posts.flatMap((post) => post.tags))].sort();
   const untaggedPosts = posts.filter((post) => post.tags.length === 0);
-  const tagEntries = tags.map((tag) => [
-    tag,
-    posts.filter((post) => post.tags.includes(tag)),
-  ]);
-  const tagBranches = tagEntries
-    .map(([tag, entries]) => {
-      const categoryFilters = [
-        ...new Set(entries.flatMap(postCategories)),
-      ].sort((a, b) => a.localeCompare(b, "zh-CN"));
-      const filters = [
-        taxonomyFilter("全部分类", "all", true),
-        ...categoryFilters.map((category) =>
-          taxonomyFilter(category, slugify(category)),
-        ),
-      ].join("");
-      const postNodes = entries
-        .map((post) =>
-          taxonomyPostNode(
-            post,
-            postCategories(post)
-              .map((category) => slugify(category))
-              .join(" "),
-          ),
-        )
-        .join("");
-      return taxonomyBranch({
-        id: `tag-${slugify(tag)}`,
-        label: escapeHtml(tag),
-        count: entries.length,
-        filters,
-        filterLabel: `${tag} 分类筛选`,
-        posts: postNodes,
-        extraClass: "tag-branch",
-      });
-    })
+  const tagBranches = tags
+    .map((tag) =>
+      buildTagBranch(
+        tag,
+        posts.filter((post) => post.tags.includes(tag)),
+      ),
+    )
     .join("");
-  const untaggedBranch = untaggedPosts.length
-    ? (() => {
-        const tag = "无标签";
-        const entries = untaggedPosts;
-        const categoryFilters = [
-          ...new Set(entries.flatMap(postCategories)),
-        ].sort((a, b) => a.localeCompare(b, "zh-CN"));
-        const filters = [
-          taxonomyFilter("全部分类", "all", true),
-          ...categoryFilters.map((category) =>
-            taxonomyFilter(category, slugify(category)),
-          ),
-        ].join("");
-        const postNodes = entries
-          .map((post) =>
-            taxonomyPostNode(
-              post,
-              postCategories(post)
-                .map((category) => slugify(category))
-                .join(" "),
-            ),
-          )
-          .join("");
-        return taxonomyBranch({
-          id: `tag-${slugify(tag)}`,
-          label: escapeHtml(tag),
-          count: entries.length,
-          filters,
-          filterLabel: `${tag} 分类筛选`,
-          posts: postNodes,
-          extraClass: "tag-branch",
-        });
-      })()
-    : "";
-  const untaggedMap = untaggedBranch
+  const untaggedMap = untaggedPosts.length
     ? `<section class="taxonomy-map tag-map tag-untagged-map" id="untagged-map" aria-label="无标签文章">
         <div class="taxonomy-root">
           <span class="taxonomy-root-label">NO TAG</span>
           <strong>${untaggedPosts.length} 篇文章</strong>
         </div>
-        <div class="taxonomy-branches">${untaggedBranch}</div>
+        <div class="taxonomy-branches">${buildTagBranch("无标签", untaggedPosts)}</div>
       </section>`
     : "";
   await fs.writeFile(
     path.join(publicDir, "tags.html"),
     await renderTemplate("tags.html", {
-      count: tagEntries.length,
+      count: tags.length,
       postCount: posts.length,
       content: tagBranches,
       untaggedMap,
     }),
   );
+}
+
+async function buildCategoriesPage(posts) {
   const categoryGroups = new Map();
   const uncategorizedPosts = [];
   for (const post of posts) {
@@ -599,74 +423,23 @@ async function main() {
       uncategorizedPosts.push(post);
       continue;
     }
-    const categories = post.categories;
-    for (const category of categories) {
+    for (const category of post.categories) {
       if (!categoryGroups.has(category)) categoryGroups.set(category, []);
       categoryGroups.get(category).push(post);
     }
   }
   const categoryBranches = [...categoryGroups.entries()]
     .sort(([a], [b]) => a.localeCompare(b, "zh-CN"))
-    .map(([category, entries]) => {
-      const categoryTags = [
-        ...new Set(entries.flatMap((post) => post.tags)),
-      ].sort();
-      const filters = [
-        taxonomyFilter("全部标签", "all", true),
-        ...categoryTags.map((tag) => taxonomyFilter(tag, slugify(tag))),
-      ].join("");
-      const postNodes = entries
-        .map((post) =>
-          taxonomyPostNode(
-            post,
-            post.tags.map((tag) => slugify(tag)).join(" "),
-          ),
-        )
-        .join("");
-      return taxonomyBranch({
-        id: `category-${slugify(category)}`,
-        label: escapeHtml(category),
-        count: entries.length,
-        filters,
-        filterLabel: `${category} 标签筛选`,
-        posts: postNodes,
-      });
-    })
+    .map(([category, entries]) => buildCategoryBranch(category, entries))
     .join("");
   const uncategorizedMap = uncategorizedPosts.length
-    ? (() => {
-        const category = "未分类";
-        const categoryTags = [
-          ...new Set(uncategorizedPosts.flatMap((post) => post.tags)),
-        ].sort();
-        const filters = [
-          taxonomyFilter("全部标签", "all", true),
-          ...categoryTags.map((tag) => taxonomyFilter(tag, slugify(tag))),
-        ].join("");
-        const postNodes = uncategorizedPosts
-          .map((post) =>
-            taxonomyPostNode(
-              post,
-              post.tags.map((tag) => slugify(tag)).join(" "),
-            ),
-          )
-          .join("");
-        const branch = taxonomyBranch({
-          id: `category-${slugify(category)}`,
-          label: category,
-          count: uncategorizedPosts.length,
-          filters,
-          filterLabel: `${category} 标签筛选`,
-          posts: postNodes,
-        });
-        return `<section class="taxonomy-map taxonomy-uncategorized-map" id="uncategorized-map" aria-label="未分类文章">
-          <div class="taxonomy-root">
-            <span class="taxonomy-root-label">UNCATEGORIZED</span>
-            <strong>${uncategorizedPosts.length} 篇文章</strong>
-          </div>
-          <div class="taxonomy-branches">${branch}</div>
-        </section>`;
-      })()
+    ? `<section class="taxonomy-map taxonomy-uncategorized-map" id="uncategorized-map" aria-label="未分类文章">
+        <div class="taxonomy-root">
+          <span class="taxonomy-root-label">UNCATEGORIZED</span>
+          <strong>${uncategorizedPosts.length} 篇文章</strong>
+        </div>
+        <div class="taxonomy-branches">${buildCategoryBranch("未分类", uncategorizedPosts)}</div>
+      </section>`
     : "";
   await fs.writeFile(
     path.join(publicDir, "categories.html"),
@@ -677,6 +450,9 @@ async function main() {
       uncategorizedMap,
     }),
   );
+}
+
+async function buildAboutPage() {
   await fs.writeFile(
     path.join(publicDir, "about.html"),
     await renderTemplate("page.html", {
@@ -687,6 +463,21 @@ async function main() {
       sidebar: "",
     }),
   );
+}
+
+async function main() {
+  if (process.argv.includes("--clean")) {
+    await fs.rm(publicDir, { recursive: true, force: true });
+    return;
+  }
+  const posts = await readPosts();
+  await preparePublicDir();
+  await buildIndex(posts);
+  await buildPostPages(posts);
+  await buildArchivesPage(posts);
+  await buildTagsPage(posts);
+  await buildCategoriesPage(posts);
+  await buildAboutPage();
   console.log(
     `Built ${posts.length} posts into ${path.relative(root, publicDir)}/`,
   );
@@ -702,4 +493,4 @@ if (
     process.exitCode = 1;
   });
 
-export { renderMarkdown };
+export { plainText };

@@ -10,7 +10,14 @@
 - Added a copy step for `src/scripts/background.js` to the build.
 
 ### Changed
+- Split the Markdown pipeline into `scripts/markdown.mjs` and restructured `build.mjs` into per-page builders, removing the duplicated tag/category branch construction.
+- Excerpts and reading time now strip fenced code, footnote definitions and link targets, so Windows image paths no longer leak into post cards.
+- Consolidated duplicated CSS rules (meta chips, article title, post footer, taxonomy nodes) without changing computed styles.
+- Rewrote AGENTS.md as an agent-oriented maintenance handbook and bumped CI to Node 22.
 - Corrected the `marked` dependency range to `^17.0.5` so a fresh install matches the renderer API the build uses.
+
+### Removed
+- Removed dead CSS left over from the pre-taxonomy design (`.read-more`, `.tag-section`, `.tag-list`, `.article-meta`).
 - Replaced the flat page background with the animated dot field; header, cards, inputs and the article body are now translucent panels so the flow shows through.
 - Moved the base background colour from `body` to `html` so the fixed background layer paints above it.
 

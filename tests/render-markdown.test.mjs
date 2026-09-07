@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { renderMarkdown } from "../scripts/build.mjs";
+import { createMarkdownRenderer } from "../scripts/markdown.mjs";
+import { plainText } from "../scripts/build.mjs";
 
-// renderMarkdown resolves local images relative to content/, so point the
+// The renderer resolves local images relative to content/, so point the
 // fake source file there; the file itself never needs to exist.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const renderMarkdown = createMarkdownRenderer(path.join(root, "content"));
 const sourceFile = path.join(root, "content", "fixture.md");
 const render = (body) => renderMarkdown(body, sourceFile);
 
@@ -92,4 +94,17 @@ test("content 内的相对图片路径转换为 assets 路径", () => {
   const html = render("![图](./typora_images/pic.png)");
   assert.ok(html.includes('src="../assets/typora_images/pic.png"'));
   assert.ok(html.includes('alt="图"'));
+});
+
+test("plainText 剥离代码块、脚注和链接地址", () => {
+  const text = plainText(
+    "前言[链接文字](https://example.com)。\n\n```js\nconst a = 1;\n```\n\n带脚注[^1]。\n\n[^1]: 定义内容。\n  续行也不应出现。",
+  );
+  assert.ok(text.includes("前言链接文字。"));
+  assert.ok(text.includes("带脚注 。"));
+  assert.ok(!text.includes("const a"));
+  assert.ok(!text.includes("example.com"));
+  assert.ok(!text.includes("定义内容"));
+  assert.ok(!text.includes("续行"));
+  assert.ok(!text.includes("[^1]"));
 });
