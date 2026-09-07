@@ -108,3 +108,28 @@ test("plainText 剥离代码块、脚注和链接地址", () => {
   assert.ok(!text.includes("续行"));
   assert.ok(!text.includes("[^1]"));
 });
+
+test("emoji 短代码转换为 Unicode 字符", () => {
+  const html = render("表情 :smile: 和 :heart: :rocket: 发布");
+  assert.ok(html.includes("😄"));
+  assert.ok(html.includes("❤️"));
+  assert.ok(html.includes("🚀"));
+  assert.ok(!html.includes(":smile:"));
+});
+
+test("未知短代码与代码中的短代码保持原样", () => {
+  const html = render(
+    "`:smile:` 和 :unknown-emoji-name:\n\n```\n:rocket:\n```",
+  );
+  assert.ok(html.includes("<code>:smile:</code>"));
+  assert.ok(html.includes(":unknown-emoji-name:"));
+  // 行内代码和代码块中的短代码不被转换，整页不应出现任何 emoji。
+  assert.ok(!html.includes("🚀"));
+  assert.ok(!html.includes("😄"));
+});
+
+test("plainText 将已知 emoji 短代码转换为字符", () => {
+  const text = plainText("发布啦 :rocket: :unknown-x:");
+  assert.ok(text.includes("🚀"));
+  assert.ok(text.includes(":unknown-x:"));
+});

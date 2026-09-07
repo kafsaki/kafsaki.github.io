@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Added GitHub-style emoji shortcodes (`:rocket:`) via a curated dependency-free map in `scripts/emoji-map.mjs`; unknown names stay literal and code spans are unaffected.
 - Added prose styles for article content: tables (striped, hoverable, horizontally scrollable), blockquotes, lists with accent markers, task-list checkboxes, horizontal rules, responsive images and heading hierarchy.
 - Added a style-coverage test pinning every element marked can emit to an `.article-content` rule.
 - Added `node:test` regression tests for the Markdown renderer (code highlighting, language labels, footnote edge cases) and wired `npm test` into the CI workflow.

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createMarkdownRenderer, escapeHtml } from "./markdown.mjs";
+import { EMOJI_MAP } from "./emoji-map.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentDir = path.join(root, "content");
@@ -64,6 +65,7 @@ const plainText = (body) =>
     .replace(/```[\s\S]*?(?:```|$)/g, " ")
     .replace(/\[\^[^\]\n]+\]/g, " ")
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/:([a-zA-Z0-9_+-]+):/g, (raw, name) => EMOJI_MAP[name] ?? raw)
     .replace(/[#>*`\[\]()_~]/g, "")
     .replace(/\s+/g, " ")
     .trim();

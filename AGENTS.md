@@ -43,6 +43,7 @@
 - 使用 marked 17 对象式 renderer API；`createMarkdownRenderer(contentDir)` 返回 `renderMarkdown(body, sourceFile)`。
 - 代码块一律输出 `<figure class="code-block">`，头部显示语言标签；无语言显示 `text`；hljs 失败回退为纯转义文本。
 - 脚注 `[^id]` 为本地自定义扩展：lex 阶段收集定义，编号按**首次引用顺序**；未定义引用原样输出；同一脚注重复引用生成 `fnref-N-k` 并各自回链；文末输出 `<section class="footnotes">`。
+- emoji 短代码 `:name:` 由行内扩展查 `scripts/emoji-map.mjs`（内置精选表，无依赖）；未知名称保持字面；扩充时直接往表里加条目。
 - **陷阱**：marked 的段落 tokenizer 会吞掉没有空行分隔的脚注定义行，当前由 parse 前的预处理补空行解决。改动 tokenizer 前先读懂这段预处理。
 - 图片只处理 `content/` 内的引用（含 Typora 的 Windows 绝对路径），目录外路径原样保留。
 

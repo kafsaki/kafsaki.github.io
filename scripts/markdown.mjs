@@ -1,6 +1,7 @@
 import path from "node:path";
 import { Marked } from "marked";
 import hljs from "highlight.js/lib/common";
+import { EMOJI_MAP } from "./emoji-map.mjs";
 
 // Markdown-to-HTML rendering pipeline: syntax highlighting, GFM footnotes and
 // local image resolution. Pure string processing — no filesystem access, so
@@ -163,6 +164,26 @@ ${items}
 </section>`;
 }
 
+// GitHub-style emoji shortcodes (:rocket:). Unknown names stay literal, and
+// code spans/blocks are unaffected: those tokenizers run first at backticks.
+const emojiExtension = {
+  name: "emoji",
+  level: "inline",
+  start(src) {
+    return src.match(/:[a-zA-Z0-9_+-]+:/)?.index;
+  },
+  tokenizer(src) {
+    const match = /^:([a-zA-Z0-9_+-]+):/.exec(src);
+    if (!match) return;
+    const emoji = EMOJI_MAP[match[1]];
+    if (!emoji) return;
+    return { type: "emoji", raw: match[0], emoji };
+  },
+  renderer(token) {
+    return token.emoji;
+  },
+};
+
 // Local images resolve relative to the article and must stay inside
 // contentDir; anything outside is left untouched.
 function createMarkdownRenderer(contentDir) {
@@ -180,7 +201,7 @@ function createMarkdownRenderer(contentDir) {
           code: renderCodeBlock,
         },
       },
-      { extensions: createFootnoteSupport(state) },
+      { extensions: [...createFootnoteSupport(state), emojiExtension] },
     );
     // A definition directly below a paragraph line would be swallowed by the
     // paragraph tokenizer, so give it the blank line Markdown expects.
