@@ -11,7 +11,7 @@
 ## 硬规则
 
 1. **产物不入库**：`.vitepress/dist/`、`.vitepress/cache/`、`node_modules/` 永不提交。`public/` 只放静态资产（原样复制到 dist 根），不是构建产物目录。
-2. **文件名即 URL**：`posts/<name>.md` → `/posts/<name>.html`。不改已发布文章的文件名。
+2. **文件名即 URL**：`posts/<name>.md` → `/posts/<name>.html`。不改已发布文章的文件名；`pages/` 下的页面文件改名前必须先改 `rewrites`。
 3. 提交身份固定为 `kafsaki <kafsaki.moe@outlook.com>`；仓库已做 local 配置，只验证不修改。
 4. 保留用户的无关改动，不重写 Git 历史。
 
@@ -29,7 +29,7 @@
 | 路径 | 职责 |
 | --- | --- |
 | `posts/*.md` | 文章。front matter：`title/date/tags/categories`；title 缺省用文件名，date 缺省显示为空 |
-| `index.md`、`archives.md`、`tags.md`、`categories.md`、`about.md` | 站点页面；`index.md` 用 `layout: home`，其余带 `kicker/lead`（+ `wide: true` 宽版式） |
+| `pages/*.md` | 站点页面（首页 `layout: home`；归档/标签/分类/关于，带 `kicker/lead`，宽版式加 `wide: true`）。**URL 由 config.mts 的 `rewrites` 固定为根路径**，移动或新增页面文件必须同步该表 |
 | `public/assets/` | 静态资产（如 `typora_images/`），文章用 `/assets/...` 引用 |
 | `.vitepress/config.mts` | 站点配置：语言、Shiki（css-variables 主题）、markdown-it-footnote/emoji 插件 |
 | `.vitepress/data/posts.data.ts` | 文章数据加载器：归一化字段 + 摘要（前 180 字符）+ 阅读时长 |

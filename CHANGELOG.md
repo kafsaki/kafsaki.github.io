@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Moved the site page markdown files into `pages/`; URLs stay at the root via VitePress `rewrites`.
+
 ## [3.0.0] - 2026-09-07
 
 ### Added
